@@ -3,6 +3,7 @@ const cors = require('cors');
 const dotenv = require('dotenv');
 const mongoose = require('mongoose');
 const morgan = require('morgan');
+const rateLimit = require('express-rate-limit');
 
 // Load environment variables
 dotenv.config();
@@ -16,10 +17,38 @@ const messageRoutes = require('./routes/messageRoutes');
 // Initialize app
 const app = express();
 
+// Rate limiting
+const generalLimiter = rateLimit({
+  windowMs: 15 * 60 * 1000, // 15 minutes
+  max: 100, // limit each IP to 100 requests per windowMs
+  message: {
+    error: 'Too many requests from this IP, please try again later.'
+  },
+  standardHeaders: true, // Return rate limit info in the `RateLimit-*` headers
+  legacyHeaders: false, // Disable the `X-RateLimit-*` headers
+});
+
+const authLimiter = rateLimit({
+  windowMs: 15 * 60 * 1000, // 15 minutes
+  max: 5, // limit each IP to 5 requests per windowMs for auth endpoints
+  message: {
+    error: 'Too many authentication attempts, please try again later.'
+  },
+  standardHeaders: true,
+  legacyHeaders: false,
+});
+
+// Apply rate limiting middleware
+app.use(generalLimiter);
+
 // Middleware
 app.use(cors());
 app.use(express.json());
 app.use(morgan('combined'));
+
+// Apply stricter rate limiting to authentication routes
+app.use('/api/users/login', authLimiter);
+app.use('/api/users/register', authLimiter);
 
 // Routes
 app.use('/api/users', userRoutes);
