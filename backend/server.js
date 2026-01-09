@@ -9,6 +9,8 @@ dotenv.config();
 
 // Import routes
 const userRoutes = require('./routes/userRoutes');
+const conversationRoutes = require('./routes/conversationRoutes');
+const messageRoutes = require('./routes/messageRoutes');
 
 // Initialize app
 const app = express();
@@ -20,6 +22,8 @@ app.use(morgan('combined'));
 
 // Routes
 app.use('/api/users', userRoutes);
+app.use('/api/conversations', conversationRoutes);
+app.use('/api/messages', messageRoutes);
 
 app.get('/', (req, res) => {
   res.json({ message: 'Welcome to ProLink API' });

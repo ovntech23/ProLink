@@ -30,6 +30,18 @@ This will start a MongoDB container with the necessary configuration.
 - `GET /api/users` - Get all users
 - `GET /api/users/:id` - Get a specific user by ID
 
+### Conversation Routes
+
+- `GET /api/conversations` - Get all conversations for the current user
+- `POST /api/conversations` - Start a new conversation with a user (Admin only)
+- `GET /api/conversations/:id/messages` - Get messages in a conversation
+
+### Message Routes
+
+- `POST /api/messages` - Send a new message
+- `GET /api/messages` - Get all messages for the current user
+- `PUT /api/messages/:id/read` - Mark a message as read
+
 ### Examples
 
 Register a new user:
@@ -39,6 +51,29 @@ Register a new user:
   "email": "john@example.com",
   "password": "password123",
   "role": "driver"
+}
+```
+
+Start a new conversation:
+```json
+{
+  "participantId": "user_id_here"
+}
+```
+
+Send a message:
+```json
+{
+  "conversationId": "conversation_id_here",
+  "content": "Hello, this is a test message!"
+}
+```
+
+Or send a message to start a new conversation:
+```json
+{
+  "recipientId": "recipient_id_here",
+  "content": "Hello, this is a test message!"
 }
 ```
 
