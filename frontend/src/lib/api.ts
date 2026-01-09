@@ -156,6 +156,13 @@ export const statisticsApi = {
     const response = await fetchApi<Statistic[]>('/api/statistics');
     return response.data;
   },
+  createStatistic: async (statisticData: Omit<Statistic, '_id' | 'createdAt' | 'updatedAt'>): Promise<Statistic> => {
+    const response = await fetchApi<Statistic>('/api/statistics', {
+      method: 'POST',
+      body: JSON.stringify(statisticData),
+    });
+    return response.data;
+  },
 };
 
 // Cargo API
@@ -164,12 +171,26 @@ export const cargoApi = {
     const response = await fetchApi<Cargo[]>('/api/cargos');
     return response.data;
   },
+  createCargo: async (cargoData: Omit<Cargo, '_id' | 'createdAt' | 'updatedAt'>): Promise<Cargo> => {
+    const response = await fetchApi<Cargo>('/api/cargos', {
+      method: 'POST',
+      body: JSON.stringify(cargoData),
+    });
+    return response.data;
+  },
 };
 
 // Features API
 export const featuresApi = {
   getFeatures: async (): Promise<Feature[]> => {
     const response = await fetchApi<Feature[]>('/api/features');
+    return response.data;
+  },
+  createFeature: async (featureData: Omit<Feature, '_id' | 'createdAt' | 'updatedAt'>): Promise<Feature> => {
+    const response = await fetchApi<Feature>('/api/features', {
+      method: 'POST',
+      body: JSON.stringify(featureData),
+    });
     return response.data;
   },
 };
