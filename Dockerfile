@@ -1,4 +1,4 @@
-# Use Node.js 18 as base image
+# Use Node.js 18 as base image for MERN stack
 FROM node:18-alpine
 
 # Set working directory
