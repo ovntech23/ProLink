@@ -50,17 +50,17 @@ export const MessagesPage = () => {
     }
   };
 
-  const handleSendMessage = (content: string) => {
+  const handleSendMessage = (content: string, attachments?: any[]) => {
     if (!currentUser || !selectedUser) return;
-    
+
     // Send message through store
-    sendMessage(selectedUser.id, content);
-    
+    sendMessage(selectedUser.id, content, attachments);
+
     // Refresh messages and conversations
     if (currentUser) {
       const userMessages = getMessagesBetweenUsers(currentUser.id, selectedUser.id);
       setMessages(userMessages);
-      
+
       const updatedConversations = getConversations(currentUser.id);
       setConversations(updatedConversations);
     }

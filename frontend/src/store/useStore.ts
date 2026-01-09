@@ -70,6 +70,15 @@ export interface Message {
   content: string;
   timestamp: string;
   read: boolean;
+  attachments?: Attachment[];
+}
+
+export interface Attachment {
+  id: string;
+  name: string;
+  type: string; // mime type
+  url: string; // for display purposes in this mock
+  size?: number;
 }
 
 interface AppState {
@@ -92,7 +101,7 @@ interface AppState {
   deleteUser: (userId: string) => void;
   signUp: (user: Omit<User, 'id' | 'isApproved'>) => void;
   reportShipmentIncident: (shipmentId: string, note: string) => void;
-  sendMessage: (recipientId: string, content: string) => void;
+  sendMessage: (recipientId: string, content: string, attachments?: Attachment[]) => void;
   getMessagesBetweenUsers: (userId1: string, userId2: string) => Message[];
   getUnreadMessages: (userId: string) => Message[];
   markMessageAsRead: (messageId: string) => void;
@@ -252,6 +261,30 @@ const MOCK_MESSAGES: Message[] = [
     content: 'I\'m available for the Kitwe delivery tomorrow.',
     timestamp: '2025-01-01T10:00:00Z',
     read: true
+  },
+  {
+    id: 'm5',
+    senderId: 'o1',
+    recipientId: 'b1',
+    content: 'Here are the shipping documents:',
+    timestamp: '2025-01-01T10:30:00Z',
+    read: true,
+    attachments: [
+      {
+        id: 'a1',
+        name: 'invoice.pdf',
+        type: 'application/pdf',
+        url: '#',
+        size: 102400
+      },
+      {
+        id: 'a2',
+        name: 'cargo-photo.jpg',
+        type: 'image/jpeg',
+        url: '#',
+        size: 204800
+      }
+    ]
   }
 ];
 
@@ -433,7 +466,7 @@ export const useStore = create<AppState>((set, get) => ({
     }));
   },
   
-  sendMessage: (recipientId, content) => {
+sendMessage: (recipientId, content, attachments) => {
     const { currentUser } = get();
     if (!currentUser) return;
     
@@ -443,7 +476,8 @@ export const useStore = create<AppState>((set, get) => ({
       recipientId,
       content,
       timestamp: new Date().toISOString(),
-      read: false
+      read: false,
+      attachments
     };
     
     set(state => ({
