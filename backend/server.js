@@ -4,6 +4,7 @@ const dotenv = require('dotenv');
 const mongoose = require('mongoose');
 const morgan = require('morgan');
 const rateLimit = require('express-rate-limit');
+const path = require('path');
 
 // Load environment variables
 dotenv.config();
@@ -46,6 +47,9 @@ app.use(cors());
 app.use(express.json());
 app.use(morgan('combined'));
 
+// Serve static files from public directory (built frontend)
+app.use(express.static('public'));
+
 // Apply stricter rate limiting to authentication routes
 app.use('/api/users/login', authLimiter);
 app.use('/api/users/register', authLimiter);
@@ -62,6 +66,11 @@ app.get('/', (req, res) => {
 
 app.get('/api', (req, res) => {
   res.json({ message: 'Frontend and Backend are successfully connected!' });
+});
+
+// Catch all handler: send back React's index.html file for client-side routing
+app.get('*', (req, res) => {
+  res.sendFile(path.join(__dirname, 'public', 'index.html'));
 });
 
 // Error handling middleware
