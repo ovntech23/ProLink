@@ -14,6 +14,9 @@ const userRoutes = require('./routes/userRoutes');
 const driverRoutes = require('./routes/driverRoutes');
 const conversationRoutes = require('./routes/conversationRoutes');
 const messageRoutes = require('./routes/messageRoutes');
+const statisticRoutes = require('./routes/statisticRoutes');
+const cargoRoutes = require('./routes/cargoRoutes');
+const featureRoutes = require('./routes/featureRoutes');
 
 // Initialize app
 const app = express();
@@ -59,6 +62,9 @@ app.use('/api/users', userRoutes);
 app.use('/api/drivers', driverRoutes);
 app.use('/api/conversations', conversationRoutes);
 app.use('/api/messages', messageRoutes);
+app.use('/api/statistics', statisticRoutes);
+app.use('/api/cargos', cargoRoutes);
+app.use('/api/features', featureRoutes);
 
 app.get('/', (req, res) => {
   res.json({ message: 'Welcome to ProLink API' });

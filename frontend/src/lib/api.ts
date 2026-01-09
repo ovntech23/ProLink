@@ -1,5 +1,40 @@
 const API_BASE_URL = import.meta.env.VITE_API_BASE_URL || 'http://localhost:5000';
 
+// Types for our data models
+interface Statistic {
+  _id: string;
+  label: string;
+  value: string;
+  description: string;
+  category: 'company' | 'service' | 'achievement';
+  order: number;
+  createdAt: string;
+  updatedAt: string;
+}
+
+interface Cargo {
+  _id: string;
+  name: string;
+  description?: string;
+  category?: string;
+  isActive: boolean;
+  order: number;
+  createdAt: string;
+  updatedAt: string;
+}
+
+interface Feature {
+  _id: string;
+  title: string;
+  description: string;
+  icon?: string;
+  category: 'core-value' | 'service' | 'benefit';
+  isActive: boolean;
+  order: number;
+  createdAt: string;
+  updatedAt: string;
+}
+
 interface ApiResponse<T> {
   data: T;
   message?: string;
@@ -115,5 +150,30 @@ export const driverApi = {
   },
 };
 
-// Export the base fetchApi function for custom requests
+// Statistics API
+export const statisticsApi = {
+  getStatistics: async (): Promise<Statistic[]> => {
+    const response = await fetchApi<Statistic[]>('/api/statistics');
+    return response.data;
+  },
+};
+
+// Cargo API
+export const cargoApi = {
+  getCargos: async (): Promise<Cargo[]> => {
+    const response = await fetchApi<Cargo[]>('/api/cargos');
+    return response.data;
+  },
+};
+
+// Features API
+export const featuresApi = {
+  getFeatures: async (): Promise<Feature[]> => {
+    const response = await fetchApi<Feature[]>('/api/features');
+    return response.data;
+  },
+};
+
+// Export the base fetchApi function for custom requests and types
 export { fetchApi };
+export type { Statistic, Cargo, Feature };
