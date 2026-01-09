@@ -5,6 +5,7 @@ import { FeaturesSection } from '../components/home/FeaturesSection';
 import { VisionMissionSection } from '../components/home/VisionMissionSection';
 import { CargoListSection } from '../components/home/CargoListSection';
 import { StatsSection } from '../components/home/StatsSection';
+import { ApiTestSection } from '../components/home/ApiTestSection';
 import { PartnersSection } from '../components/home/PartnersSection';
 import { CtaSection } from '../components/home/CtaSection';
 import { Footer } from '../components/layout/Footer';
@@ -42,7 +43,8 @@ export const Home = () => {
       
       <CargoListSection />
       
-      <StatsSection />
+<StatsSection />
+<ApiTestSection />
       
       <PartnersSection />
       
