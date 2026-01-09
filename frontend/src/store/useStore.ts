@@ -1,4 +1,5 @@
 import { create } from 'zustand';
+import { driverApi } from '../lib/api';
 
 export type UserRole = 'broker' | 'driver' | 'owner';
 
@@ -295,6 +296,16 @@ export const useStore = create<AppState>((set, get) => ({
   shipments: MOCK_SHIPMENTS,
   payments: MOCK_PAYMENTS,
   messages: MOCK_MESSAGES,
+
+  // Initialize store with data from API
+  init: async () => {
+    try {
+      const { data: drivers } = await driverApi.getDrivers();
+      set({ drivers });
+    } catch (error) {
+      console.error('Failed to fetch drivers:', error);
+    }
+  },
   
   login: (email) => {
     const user = get().users.find(u => u.email === email);

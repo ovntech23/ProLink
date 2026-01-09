@@ -9,6 +9,7 @@ dotenv.config();
 
 // Import routes
 const userRoutes = require('./routes/userRoutes');
+const driverRoutes = require('./routes/driverRoutes');
 const conversationRoutes = require('./routes/conversationRoutes');
 const messageRoutes = require('./routes/messageRoutes');
 
@@ -22,6 +23,7 @@ app.use(morgan('combined'));
 
 // Routes
 app.use('/api/users', userRoutes);
+app.use('/api/drivers', driverRoutes);
 app.use('/api/conversations', conversationRoutes);
 app.use('/api/messages', messageRoutes);
 

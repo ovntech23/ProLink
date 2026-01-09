@@ -23,6 +23,37 @@ const userSchema = new mongoose.Schema({
     enum: ['driver', 'owner', 'broker'],
     default: 'owner'
   },
+  // Driver-specific fields
+  status: {
+    type: String,
+    enum: ['available', 'busy', 'offline'],
+    default: 'offline'
+  },
+  vehicleType: {
+    type: String
+  },
+  vehiclePlate: {
+    type: String
+  },
+  vehicleModel: {
+    type: String
+  },
+  vehicleCategory: {
+    type: String
+  },
+  trailerPlate: {
+    type: String
+  },
+  currentLocation: {
+    type: String
+  },
+  phone: {
+    type: String
+  },
+  isApproved: {
+    type: Boolean,
+    default: false
+  },
   createdAt: {
     type: Date,
     default: Date.now

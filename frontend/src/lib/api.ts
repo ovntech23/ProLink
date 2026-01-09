@@ -99,5 +99,21 @@ export const shipmentApi = {
   },
 };
 
+// Driver API
+export const driverApi = {
+  getDrivers: async () => {
+    return fetchApi<any[]>('/api/drivers');
+  },
+  getDriverById: async (id: string) => {
+    return fetchApi<any>(`/api/drivers/${id}`);
+  },
+  updateDriverProfile: async (id: string, driverData: any) => {
+    return fetchApi<any>(`/api/drivers/${id}`, {
+      method: 'PUT',
+      body: JSON.stringify(driverData),
+    });
+  },
+};
+
 // Export the base fetchApi function for custom requests
 export { fetchApi };

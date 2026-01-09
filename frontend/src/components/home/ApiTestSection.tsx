@@ -1,5 +1,7 @@
 import { useState, useEffect } from 'react';
 
+const API_BASE_URL = import.meta.env.VITE_API_BASE_URL || 'http://localhost:5000';
+
 export const ApiTestSection = () => {
   const [apiResponse, setApiResponse] = useState<string | null>(null);
   const [loading, setLoading] = useState<boolean>(false);
@@ -8,9 +10,9 @@ export const ApiTestSection = () => {
   const testApiConnection = async () => {
     setLoading(true);
     setError(null);
-    
+
     try {
-      const response = await fetch('/api');
+      const response = await fetch(`${API_BASE_URL}/api`);
       const data = await response.json();
       setApiResponse(data.message);
     } catch (err) {
@@ -73,10 +75,10 @@ export const ApiTestSection = () => {
             <div className="bg-muted p-4 rounded-lg">
               <h4 className="font-medium mb-2">How it works:</h4>
               <ul className="text-sm text-muted-foreground list-disc pl-5 space-y-1">
-                <li>Frontend makes a request to /api endpoint</li>
-                <li>Vite proxy forwards the request to http://localhost:5000</li>
+                <li>Frontend makes a request to the configured API endpoint</li>
+                <li>In development: Vite proxy forwards to http://localhost:5000</li>
+                <li>In production: Uses VITE_API_BASE_URL environment variable</li>
                 <li>Backend responds with welcome message</li>
-                <li>No CORS issues due to proxy configuration</li>
               </ul>
             </div>
           </div>
