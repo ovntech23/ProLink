@@ -16,9 +16,9 @@ export const StatsSection = () => {
         </div>
         <div className="p-6 bg-linear-to-br from-success/10 to-success/5 rounded-xl border border-success/20 hover:border-success/50 transition-all duration-300 group hover:shadow-lg hover:shadow-success/20 hover:-translate-y-1">
           <div className="text-4xl font-bold text-success mb-2 group-hover:scale-110 transition-all duration-300">
-            25+
+            8+
           </div>
-          <div className="text-muted-foreground font-medium">Global Routes</div>
+          <div className="text-muted-foreground font-medium">Continental Routes</div>
         </div>
         <div className="p-6 bg-linear-to-br from-warning/10 to-warning/5 rounded-xl border border-warning/20 hover:border-warning/50 transition-all duration-300 group hover:shadow-lg hover:shadow-warning/20 hover:-translate-y-1">
           <div className="text-4xl font-bold text-warning mb-2 group-hover:scale-110 transition-all duration-300">
