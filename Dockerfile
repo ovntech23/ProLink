@@ -17,7 +17,8 @@ COPY backend/ ./backend/
 COPY frontend/ ./frontend/
 
 # Install frontend dependencies and build with production environment variables
-RUN cd frontend && npm ci && VITE_API_BASE_URL="" npm run build
+# Set VITE_API_BASE_URL to empty string for relative URLs in production
+RUN cd frontend && npm ci && VITE_API_BASE_URL= npm run build
 
 # Move built frontend to backend public directory
 RUN mv frontend/dist backend/public

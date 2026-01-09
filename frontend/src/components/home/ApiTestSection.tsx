@@ -1,6 +1,19 @@
 import { useState, useEffect } from 'react';
 
-const API_BASE_URL = import.meta.env.VITE_API_BASE_URL || 'http://localhost:5000';
+// Handle API base URL for different environments
+// If VITE_API_BASE_URL is set, use it
+// If VITE_API_BASE_URL is empty string, use relative URLs
+// If VITE_API_BASE_URL is not set, use localhost for development
+const VITE_API_BASE_URL = import.meta.env.VITE_API_BASE_URL;
+let API_BASE_URL = 'http://localhost:5000'; // default for development
+
+if (VITE_API_BASE_URL === '') {
+  // In production, use relative URLs
+  API_BASE_URL = '';
+} else if (VITE_API_BASE_URL) {
+  // Use the provided base URL
+  API_BASE_URL = VITE_API_BASE_URL;
+}
 
 export const ApiTestSection = () => {
   const [apiResponse, setApiResponse] = useState<string | null>(null);
