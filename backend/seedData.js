@@ -2,7 +2,9 @@ const mongoose = require('mongoose');
 const Statistic = require('./models/Statistic');
 const Cargo = require('./models/Cargo');
 const Feature = require('./models/Feature');
+const User = require('./models/User');
 const dotenv = require('dotenv');
+const bcrypt = require('bcryptjs');
 
 // Load environment variables
 dotenv.config();
@@ -103,6 +105,7 @@ const seedDatabase = async () => {
     await Statistic.deleteMany();
     await Cargo.deleteMany();
     await Feature.deleteMany();
+    await User.deleteMany(); // Clear users collection
 
     console.log('Existing data cleared');
 
@@ -116,11 +119,39 @@ const seedDatabase = async () => {
     await Feature.insertMany(featuresData);
     console.log('Features data inserted');
 
+    // Create admin user
+    await seedAdminUser();
+
     console.log('Database seeding completed successfully');
     process.exit(0);
   } catch (error) {
     console.error('Error seeding database:', error);
     process.exit(1);
+  }
+};
+
+// Create a system admin user with default credentials
+const seedAdminUser = async () => {
+  try {
+    const hashedPassword = await bcrypt.hash('admin123', 10); // Default password
+
+    const adminUser = new User({
+      name: 'System Admin',
+      email: 'admin@prolink.com',
+      password: hashedPassword,
+      role: 'admin',
+      isApproved: true
+    });
+
+    const existingAdmin = await User.findOne({ email: adminUser.email });
+    if (!existingAdmin) {
+      await adminUser.save();
+      console.log('System admin user created successfully.');
+    } else {
+      console.log('System admin user already exists.');
+    }
+  } catch (error) {
+    console.error('Error seeding admin user:', error);
   }
 };
 

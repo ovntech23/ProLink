@@ -4,6 +4,7 @@ const dotenv = require('dotenv');
 const mongoose = require('mongoose');
 const morgan = require('morgan');
 const rateLimit = require('express-rate-limit');
+const helmet = require('helmet');
 const path = require('path');
 const http = require('http');
 const { Server } = require('socket.io');
@@ -33,8 +34,16 @@ const server = http.createServer(app);
 // Initialize Socket.IO
 const io = new Server(server, {
   cors: {
-    origin: "*",
-    methods: ["GET", "POST"]
+    origin: [
+      'http://localhost:5173', // Local development
+      'http://localhost:5000', // Backend on same host
+      'http://*.sslip.io', // Coolify deployed apps
+      'https://*.sslip.io', // Secure Coolify deployed apps
+      'http://prolinkafrica.com', // Production domain
+      'https://prolinkafrica.com' // Secure production domain
+    ],
+    methods: ["GET", "POST"],
+    credentials: true
   }
 });
 
@@ -198,6 +207,29 @@ const authLimiter = rateLimit({
 // Apply rate limiting middleware
 app.use(generalLimiter);
 
+// Security middleware
+app.use(helmet({
+  contentSecurityPolicy: {
+    directives: {
+      defaultSrc: ["'self'"],
+      styleSrc: ["'self'", "'unsafe-inline'", "https:", "data:"],
+      scriptSrc: ["'self'", "'unsafe-inline'", "https:", "data:"],
+      imgSrc: ["'self'", "https:", "data:"],
+      connectSrc: ["'self'", "https:", "ws:", "wss:"],
+      fontSrc: ["'self'", "https:", "data:"],
+      objectSrc: ["'none'"],
+      mediaSrc: ["'self'", "https:"],
+      frameSrc: ["'none'"],
+      childSrc: ["'self'"],
+      frameAncestors: ["'none'"],
+      formAction: ["'self'"],
+      baseUri: ["'self'"],
+      upgradeInsecureRequests: [],
+    },
+  },
+  crossOriginEmbedderPolicy: false,
+}));
+
 // Middleware
 // Configure CORS to allow requests from deployed frontend
 const corsOptions = {
@@ -214,7 +246,7 @@ const corsOptions = {
 };
 
 app.use(cors(corsOptions));
-app.use(express.json());
+app.use(express.json({ limit: '10mb' }));
 app.use(morgan('combined'));
 
 // Serve static files from public directory (built frontend)
@@ -267,7 +299,8 @@ const connectDB = async () => {
     console.log(`MongoDB Connected: ${conn.connection.host}`);
   } catch (error) {
     console.error('Database connection error:', error);
-    console.log('Continuing to start server without database connection...');
+    console.error('Server cannot start without database connection. Exiting...');
+    process.exit(1);
   }
 };
 

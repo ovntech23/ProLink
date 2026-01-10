@@ -41,29 +41,41 @@ interface ApiResponse<T> {
   success: boolean;
 }
 
-// Generic fetch wrapper with error handling
+// Get token from localStorage
+const getToken = () => {
+  return localStorage.getItem('token');
+};
+
+// Generic fetch wrapper with error handling and authentication
 async function fetchApi<T>(
   endpoint: string,
   options: RequestInit = {}
 ): Promise<ApiResponse<T>> {
   const url = `${API_BASE_URL}${endpoint}`;
   
+  // Get token and add to headers if available
+  const token = getToken();
+  const headers: HeadersInit = {
+    'Content-Type': 'application/json',
+    ...options.headers,
+  };
+  
+  // Add authorization header if token exists
+  if (token) {
+    (headers as Record<string, string>)['Authorization'] = `Bearer ${token}`;
+  }
+  
   const config: RequestInit = {
-    headers: {
-      'Content-Type': 'application/json',
-      ...options.headers,
-    },
+    headers,
     ...options,
   };
 
   try {
     const response = await fetch(url, config);
-    
     if (!response.ok) {
       const errorData = await response.json().catch(() => ({ message: 'An error occurred' }));
       throw new Error(errorData.message || `HTTP error! status: ${response.status}`);
     }
-    
     const data = await response.json();
     return { data, success: true };
   } catch (error) {
@@ -75,19 +87,17 @@ async function fetchApi<T>(
 // Auth API
 export const authApi = {
   login: async (credentials: { email: string; password: string }) => {
-    return fetchApi<{ token: string; user: any }>('/api/auth/login', {
+    return fetchApi<{ token: string; user: any }>('/api/users/login', {
       method: 'POST',
       body: JSON.stringify(credentials),
     });
   },
-
   register: async (userData: { name: string; email: string; password: string; role: string }) => {
     return fetchApi<{ _id: string; name: string; email: string; role: string; message: string }>('/api/users/register', {
       method: 'POST',
       body: JSON.stringify(userData),
     });
   },
-
   logout: async () => {
     return fetchApi<null>('/api/auth/logout', {
       method: 'POST',
@@ -100,14 +110,12 @@ export const userApi = {
   getCurrentUser: async () => {
     return fetchApi<any>('/api/users/me');
   },
-  
   updateUser: async (userData: Partial<any>) => {
     return fetchApi<any>('/api/users/me', {
       method: 'PUT',
       body: JSON.stringify(userData),
     });
   },
-
   // Add method to fetch all users
   getUsers: async () => {
     return fetchApi<any[]>('/api/users');
@@ -119,18 +127,15 @@ export const shipmentApi = {
   getShipments: async () => {
     return fetchApi<any[]>('/api/shipments');
   },
-  
   getShipmentById: async (id: string) => {
     return fetchApi<any>(`/api/shipments/${id}`);
   },
-  
   createShipment: async (shipmentData: any) => {
     return fetchApi<any>('/api/shipments', {
       method: 'POST',
       body: JSON.stringify(shipmentData),
     });
   },
-  
   updateShipment: async (id: string, shipmentData: any) => {
     return fetchApi<any>(`/api/shipments/${id}`, {
       method: 'PUT',
@@ -245,7 +250,6 @@ export const paymentApi = {
   getPayments: async () => {
     return fetchApi<any[]>('/api/payments');
   },
-
   updatePaymentStatus: async (id: string, status: string) => {
     return fetchApi<any>(`/api/payments/${id}`, {
       method: 'PUT',
@@ -259,7 +263,6 @@ export const messageApi = {
   getMessages: async () => {
     return fetchApi<any[]>('/api/messages');
   },
-
   sendMessage: async (messageData: { recipientId: string; content: string; attachments?: any[] }) => {
     return fetchApi<any>('/api/messages', {
       method: 'POST',

@@ -7,15 +7,15 @@ const SERVER_URL = import.meta.env.VITE_API_BASE_URL || 'http://localhost:5000';
 // Create the socket connection
 let socket: Socket | null = null;
 
-// Initialize the socket connection
-export const initSocket = (userId: string) => {
+// Initialize the socket connection with token authentication
+export const initSocket = (token: string) => {
   if (!socket) {
     socket = io(SERVER_URL, {
       transports: ['websocket'],
+      auth: {
+        token: token
+      }
     });
-
-    // Join the user to the socket room
-    socket.emit('join', userId);
 
     // Handle connection events
     socket.on('connect', () => {
@@ -30,7 +30,6 @@ export const initSocket = (userId: string) => {
       console.error('WebSocket connection error:', error);
     });
   }
-
   return socket;
 };
 

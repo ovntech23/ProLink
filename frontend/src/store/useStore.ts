@@ -94,7 +94,7 @@ interface AppState {
   shipments: Shipment[];
   payments: Payment[];
   messages: Message[];
-  login: (email: string) => void;
+  login: (email: string, password: string) => Promise<boolean>;
   logout: () => void;
   addShipment: (shipment: Omit<Shipment, 'id' | 'trackingId' | 'statusHistory'>) => Shipment;
   assignDriver: (shipmentId: string, driverId: string) => void;
@@ -137,12 +137,25 @@ export const useStore = create<AppState>((set, get) => ({
     }
   },
 
-  login: (email) => {
-    const user = get().users.find(u => u.email === email);
-    if (user) {
+  login: async (email, password) => {
+    try {
+      const response = await authApi.login({ email, password });
+      
+      // Store token in localStorage
+      localStorage.setItem('token', response.data.token);
+      
+      // Find user in existing users or create new user object
+      let user = get().users.find(u => u.email === response.data.user.email);
+      if (!user) {
+        user = response.data.user as User;
+      }
+      
+      // Set current user
       set({ currentUser: user });
-      // Initialize WebSocket connection
-      initSocket(user.id);
+      
+      // Initialize WebSocket connection with token
+      initSocket(response.data.token);
+      
       // Listen for incoming messages
       onMessageReceived((message) => {
         set((state) => ({
@@ -156,11 +169,18 @@ export const useStore = create<AppState>((set, get) => ({
           }]
         }));
       });
+      
+      return true;
+    } catch (error) {
+      console.error('Login failed:', error);
+      return false;
     }
   },
 
   logout: () => {
     set({ currentUser: null });
+    // Remove token from localStorage
+    localStorage.removeItem('token');
     // Disconnect WebSocket
     disconnectSocket();
   },

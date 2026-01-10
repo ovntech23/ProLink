@@ -17,22 +17,36 @@ export const Login = () => {
     email: '',
     password: ''
   });
+  const [loading, setLoading] = useState(false);
 
-  const handleLogin = (email: string, role: string) => {
-    const user = users.find(u => u.email === email);
-    if (user && !user.isApproved) {
+  const handleLogin = async (email: string, password: string) => {
+    setLoading(true);
+    try {
+      const success = await login(email, password);
+      if (success) {
+        // Get the user to determine where to navigate
+        const user = users.find(u => u.email === email);
+        if (user) {
+          if (user.role === 'broker') navigate('/broker');
+          else if (user.role === 'owner') navigate('/owner/shipments');
+          else if (user.role === 'driver') navigate('/driver/jobs');
+        }
+      } else {
+        toast({
+          title: "Login Failed",
+          description: "Invalid email or password",
+          variant: "destructive",
+        });
+      }
+    } catch (error) {
       toast({
-        title: "Account Pending Approval",
-        description: "Your account is pending admin approval. You will be able to log in once approved.",
+        title: "Login Error",
+        description: "An error occurred during login. Please try again.",
         variant: "destructive",
       });
-      return;
+    } finally {
+      setLoading(false);
     }
-
-    login(email);
-    if (role === 'broker') navigate('/broker');
-    else if (role === 'owner') navigate('/owner/shipments');
-    else if (role === 'driver') navigate('/driver/jobs');
   };
 
   const handleSignUp = () => {
@@ -40,15 +54,12 @@ export const Login = () => {
   };
 
   const handleFormChange = (field: string, value: string) => {
-    setFormData(prev => ({
-      ...prev,
-      [field]: value
-    }));
+    setFormData(prev => ({ ...prev, [field]: value }));
   };
 
-  const handleFormSubmit = (e: React.FormEvent) => {
+  const handleFormSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-
+    
     // Basic validation
     if (!formData.email || !formData.password) {
       toast({
@@ -80,17 +91,8 @@ export const Login = () => {
       return;
     }
 
-    // Find user by email
-    const user = users.find(u => u.email === formData.email);
-    if (user) {
-      handleLogin(user.email, user.role);
-    } else {
-      toast({
-        title: "Invalid Credentials",
-        description: "Invalid email or password",
-        variant: "destructive",
-      });
-    }
+    // Attempt login
+    await handleLogin(formData.email, formData.password);
   };
 
   return (
@@ -102,7 +104,9 @@ export const Login = () => {
             <div className="w-10 h-10 flex items-center justify-center">
               <img src={prolinkLogo} alt="ProLink Logo" className="w-full h-full object-contain" />
             </div>
-            <span className="text-xl font-bold" style={{ color: '#0a0c65' }}> ProLink </span>
+            <span className="text-xl font-bold" style={{ color: '#0a0c65' }}>
+              ProLink
+            </span>
           </div>
           <div className="hidden lg:flex gap-8 text-sm font-medium text-muted-foreground">
             <a href="/" className="hover:text-foreground transition-colors">Home</a>
@@ -111,7 +115,7 @@ export const Login = () => {
             <a href="/#about" className="hover:text-foreground transition-colors">About Us</a>
           </div>
           <div className="flex gap-2 sm:gap-4">
-            <button onClick={() => navigate('/login')} className="text-xs sm:text-sm font-medium text-muted-foreground hover:text-foreground transition-colors px-2" >
+            <button onClick={() => navigate('/login')} className="text-xs sm:text-sm font-medium text-muted-foreground hover:text-foreground transition-colors px-2">
               Sign In
             </button>
             <button onClick={() => navigate('/signup')} className="px-3 py-1.5 sm:px-4 sm:py-2 hover:bg-[#940909] rounded-lg text-xs sm:text-sm font-medium text-white transition-colors shadow-lg" style={{ backgroundColor: '#ba0b0b' }}>
@@ -130,48 +134,59 @@ export const Login = () => {
                 <img src={prolinkLogo} alt="ProLink Logo" className="w-full h-full object-contain" />
               </div>
             </div>
-            <CardTitle className="text-3xl font-black text-[#0a0c65] uppercase tracking-tighter"> ProLink </CardTitle>
-            <CardDescription className="uppercase text-[10px] font-bold tracking-[0.2em] text-[#ba0b0b]">Join Zambia's Professional Logistics Network</CardDescription>
+            <CardTitle className="text-3xl font-black text-[#0a0c65] uppercase tracking-tighter">
+              ProLink
+            </CardTitle>
+            <CardDescription className="uppercase text-[10px] font-bold tracking-[0.2em] text-[#ba0b0b]">
+              Join Zambia's Professional Logistics Network
+            </CardDescription>
           </CardHeader>
           <CardContent>
             <form onSubmit={handleFormSubmit} className="space-y-4 mb-8 pb-8 border-b border-border">
               <div className="space-y-2">
                 <Label htmlFor="email">Email</Label>
-                <Input
-                  id="email"
-                  type="email"
-                  placeholder="Enter your email"
-                  value={formData.email}
-                  onChange={(e) => handleFormChange('email', e.target.value)}
-                  required
-                  autoComplete="email"
+                <Input 
+                  id="email" 
+                  type="email" 
+                  placeholder="Enter your email" 
+                  value={formData.email} 
+                  onChange={(e) => handleFormChange('email', e.target.value)} 
+                  required 
+                  autoComplete="email" 
                 />
               </div>
               <div className="space-y-2">
                 <Label htmlFor="password">Password</Label>
-                <Input
-                  id="password"
-                  type="password"
-                  placeholder="Enter your password"
-                  value={formData.password}
-                  onChange={(e) => handleFormChange('password', e.target.value)}
-                  required
-                  autoComplete="current-password"
+                <Input 
+                  id="password" 
+                  type="password" 
+                  placeholder="Enter your password" 
+                  value={formData.password} 
+                  onChange={(e) => handleFormChange('password', e.target.value)} 
+                  required 
+                  autoComplete="current-password" 
                 />
               </div>
-              <Button type="submit" className="w-full">
-                Sign In
+              <Button type="submit" className="w-full" disabled={loading}>
+                {loading ? "Signing In..." : "Sign In"}
               </Button>
             </form>
-
+            
             <div className="space-y-4">
-              <p className="text-sm font-medium text-muted-foreground text-center uppercase tracking-wider">Select Login Role (Demo)</p>
+              <p className="text-sm font-medium text-muted-foreground text-center uppercase tracking-wider">
+                Select Login Role (Demo)
+              </p>
               {[
                 users.find(u => u.role === 'broker' && u.isApproved),
                 users.find(u => u.role === 'owner' && u.isApproved),
                 users.find(u => u.role === 'driver' && u.isApproved)
               ].filter(Boolean).map((user) => (
-                <Button key={user!.id} variant="outline" className="w-full p-4 rounded-xl border border-border hover:border-primary hover:bg-primary/10 transition-all flex items-center gap-4 group justify-start" onClick={() => handleLogin(user!.email, user!.role)} >
+                <Button 
+                  key={user!.id} 
+                  variant="outline" 
+                  className="w-full p-4 rounded-xl border border-border hover:border-primary hover:bg-primary/10 transition-all flex items-center gap-4 group justify-start"
+                  onClick={() => handleLogin(user!.email, 'password123')}
+                >
                   <div className="w-10 h-10 rounded-full bg-muted flex items-center justify-center text-foreground group-hover:bg-primary group-hover:text-primary-foreground transition-colors">
                     {user!.role === 'broker' && <Shield size={20} />}
                     {user!.role === 'owner' && <Package size={20} />}
@@ -184,14 +199,18 @@ export const Login = () => {
                   </div>
                 </Button>
               ))}
-              <Button variant="outline" className="w-full p-4 rounded-xl border border-border hover:border-primary hover:bg-primary/10 transition-all flex items-center gap-4 justify-center" onClick={handleSignUp} >
+              <Button 
+                variant="outline" 
+                className="w-full p-4 rounded-xl border border-border hover:border-primary hover:bg-primary/10 transition-all flex items-center gap-4 justify-center"
+                onClick={handleSignUp}
+              >
                 Sign Up for an Account
               </Button>
             </div>
           </CardContent>
-<CardFooter className="text-center text-xs text-muted-foreground">
-        ProLink Logistics © 2026
-      </CardFooter>
+          <CardFooter className="text-center text-xs text-muted-foreground">
+            ProLink Logistics © 2026
+          </CardFooter>
         </Card>
       </div>
 
