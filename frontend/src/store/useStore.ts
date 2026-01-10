@@ -1,5 +1,5 @@
 import { create } from 'zustand';
-import { driverApi } from '../lib/api';
+import { driverApi, authApi } from '../lib/api';
 import { initSocket, sendSocketMessage, onMessageReceived, disconnectSocket } from '../lib/socket';
 
 export type UserRole = 'broker' | 'driver' | 'owner';
@@ -105,7 +105,7 @@ interface AppState {
   updatePaymentStatus: (paymentId: string, status: Payment['status']) => void;
   approveUser: (userId: string) => void;
   deleteUser: (userId: string) => void;
-  signUp: (user: Omit<User, 'id' | 'isApproved'>) => void;
+  signUp: (user: Omit<User, 'id' | 'isApproved'> & { password: string }) => Promise<User>;
   reportShipmentIncident: (shipmentId: string, note: string) => void;
   sendMessage: (recipientId: string, content: string, attachments?: Attachment[]) => void;
   getMessagesBetweenUsers: (userId1: string, userId2: string) => Message[];
@@ -422,19 +422,28 @@ export const useStore = create<AppState>((set, get) => ({
     }));
   },
 
-  signUp: (userData) => {
-    const newUser = {
-      ...userData,
-      id: Math.random().toString(36).substr(2, 9),
-      isApproved: false
-    } as User;
-    set(state => {
-      const users = [...state.users, newUser];
-      const drivers = userData.role === 'driver'
-        ? [...state.drivers, newUser as DriverProfile]
-        : state.drivers;
-      return { users, drivers };
-    });
+  signUp: async (userData) => {
+    try {
+      const response = await authApi.register(userData);
+      const newUser = {
+        id: response.data._id,
+        name: response.data.name,
+        email: response.data.email,
+        role: response.data.role,
+        isApproved: false
+      } as User;
+      set(state => {
+        const users = [...state.users, newUser];
+        const drivers = userData.role === 'driver'
+          ? [...state.drivers, newUser as DriverProfile]
+          : state.drivers;
+        return { users, drivers };
+      });
+      return newUser;
+    } catch (error) {
+      console.error('Registration failed:', error);
+      throw error;
+    }
   },
 
   reportShipmentIncident: (shipmentId, note) => {

@@ -7,6 +7,7 @@ const rateLimit = require('express-rate-limit');
 const path = require('path');
 const http = require('http');
 const { Server } = require('socket.io');
+const { verify } = require('jsonwebtoken');
 const Message = require('./models/Message');
 const Conversation = require('./models/Conversation');
 const User = require('./models/User');
@@ -39,6 +40,25 @@ const io = new Server(server, {
 
 // Store connected users
 const connectedUsers = new Map();
+
+// Secure WebSocket connection handling
+io.use((socket, next) => {
+  const token = socket.handshake.auth?.token;
+
+  if (!token) {
+    console.error('WebSocket connection rejected: No token provided');
+    return next(new Error('Authentication error: No token provided'));
+  }
+
+  try {
+    const decoded = verify(token, process.env.JWT_SECRET);
+    socket.user = decoded; // Attach user info to socket
+    next();
+  } catch (error) {
+    console.error('WebSocket connection rejected: Invalid token');
+    next(new Error('Authentication error: Invalid token'));
+  }
+});
 
 // WebSocket connection handling
 io.on('connection', (socket) => {

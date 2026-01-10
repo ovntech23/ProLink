@@ -80,14 +80,14 @@ export const authApi = {
       body: JSON.stringify(credentials),
     });
   },
-  
+
   register: async (userData: { name: string; email: string; password: string; role: string }) => {
-    return fetchApi<{ token: string; user: any }>('/api/auth/register', {
+    return fetchApi<{ _id: string; name: string; email: string; role: string; message: string }>('/api/users/register', {
       method: 'POST',
       body: JSON.stringify(userData),
     });
   },
-  
+
   logout: async () => {
     return fetchApi<null>('/api/auth/logout', {
       method: 'POST',
