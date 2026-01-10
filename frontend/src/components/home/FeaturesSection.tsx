@@ -1,5 +1,24 @@
-import { useState, useEffect } from 'react';
-import { featuresApi, type Feature } from '@/lib/api';
+// Static features data
+const staticFeatures = [
+  {
+    _id: '1',
+    title: 'Trust & Reliability',
+    description: 'We connect you with verified and trusted transport partners, ensuring your cargo is handled with the utmost care and professionalism.',
+    icon: 'Shield'
+  },
+  {
+    _id: '2',
+    title: 'Nationwide Coverage',
+    description: 'Our extensive network spans across Zambia, providing seamless logistics solutions from major cities to remote areas.',
+    icon: 'Globe'
+  },
+  {
+    _id: '3',
+    title: 'Fast & Efficient',
+    description: 'Experience quick turnaround times with our optimized routing and dedicated fleet management system for timely deliveries.',
+    icon: 'Zap'
+  }
+];
 
 // Map feature icons to actual components with color
 const getIconComponent = (iconName: string, colorClass: string) => {
@@ -60,7 +79,7 @@ const getColorClasses = (index: number) => {
     {
       // Destructive (Red)
       iconBg: 'bg-destructive/10',
-      iconBorder: 'border-destructive/20',
+      iconBorder: 'border-destruct/20',
       iconColor: 'text-destructive',
       line: 'bg-destructive'
     }
@@ -70,71 +89,6 @@ const getColorClasses = (index: number) => {
 };
 
 export const FeaturesSection = () => {
-  const [features, setFeatures] = useState<Feature[]>([]);
-  const [loading, setLoading] = useState(true);
-  const [error, setError] = useState<string | null>(null);
-
-  useEffect(() => {
-    const fetchFeatures = async () => {
-      try {
-        const data = await featuresApi.getFeatures();
-        setFeatures(data);
-      } catch (err) {
-        setError('Failed to load features');
-        console.error(err);
-      } finally {
-        setLoading(false);
-      }
-    };
-
-    fetchFeatures();
-  }, []);
-
-  if (loading) {
-    return (
-      <section id="features" className="pt-12 pb-24 bg-linear-to-r from-primary/5 via-white to-accent/5 relative">
-        <div className="max-w-7xl mx-auto px-6">
-          <div className="text-center mb-16">
-            <h2 className="text-3xl font-bold mb-4 text-[#0a0c65]">Our Core Values</h2>
-            <div className="w-16 h-1 bg-[#ba0b0b] mx-auto rounded-full mb-4"></div>
-            <p className="text-muted-foreground max-w-2xl mx-auto">
-              Our business is built on matching your needs with the best available transport partners through trust, professionalism, and innovation.
-            </p>
-          </div>
-          <div className="grid md:grid-cols-3 gap-8">
-            {[1, 2, 3].map((index) => {
-              const colorClasses = getColorClasses(index - 1);
-              return (
-                <div key={index} className="group bg-white p-10 rounded-3xl border border-slate-100 shadow-xl animate-pulse">
-                  <div className={`w-16 h-16 ${colorClasses.iconBg} rounded-2xl flex items-center justify-center mb-6 shadow-sm border ${colorClasses.iconBorder}`}>
-                    <div className="w-8 h-8 bg-gray-200 rounded"></div>
-                  </div>
-                  <div className="h-6 bg-gray-200 rounded mb-4"></div>
-                  <div className="space-y-2">
-                    <div className="h-4 bg-gray-200 rounded"></div>
-                    <div className="h-4 bg-gray-200 rounded"></div>
-                    <div className="h-4 bg-gray-200 rounded w-3/4"></div>
-                  </div>
-                  <div className={`mt-6 w-12 h-1 ${colorClasses.line} rounded-full`}></div>
-                </div>
-              );
-            })}
-          </div>
-        </div>
-      </section>
-    );
-  }
-
-  if (error) {
-    return (
-      <section id="features" className="pt-12 pb-24 bg-linear-to-r from-primary/5 via-white to-accent/5 relative">
-        <div className="max-w-7xl mx-auto px-6 text-center text-red-500">
-          {error}
-        </div>
-      </section>
-    );
-  }
-
   return (
     <section id="features" className="pt-12 pb-24 bg-linear-to-r from-primary/5 via-white to-accent/5 relative">
       <div className="max-w-7xl mx-auto px-6">
@@ -146,7 +100,7 @@ export const FeaturesSection = () => {
           </p>
         </div>
         <div className="grid md:grid-cols-3 gap-8">
-          {features.map((feature, index) => {
+          {staticFeatures.map((feature, index) => {
             const colorClasses = getColorClasses(index);
             return (
               <div key={feature._id} className="group bg-white p-10 rounded-3xl border border-slate-100 shadow-xl hover:shadow-2xl transition-all hover:-translate-y-2" >
