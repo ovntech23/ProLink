@@ -7,7 +7,7 @@ This document summarizes the fixes implemented to resolve the Docker deployment 
 
 ### 1. 🔴 TypeScript Compiler Not Found
 **Error**: `sh: tsc: not found`
-**Cause**: The Docker build process was running `tsc -b && vite build` but TypeScript was not installed as a dependency during the build phase.
+**Cause**: The Docker build process was running `tsc -b && vite build` but TypeScript was not properly installed or accessible during the build phase.
 
 ### 2. 🔴 Environment Variable Warning
 **Warning**: `NODE_ENV=production` skips devDependencies installation which are often required for building.
@@ -28,11 +28,12 @@ RUN cd frontend && VITE_API_BASE_URL= npm ci && VITE_API_BASE_URL= npm run build
 
 # After (fixed):
 RUN cd frontend && npm ci
-RUN cd frontend && VITE_API_BASE_URL= npm run build
+RUN cd frontend && VITE_API_BASE_URL="" npm run build
 ```
 
 **Explanation**: 
 - Separated `npm ci` (install dependencies) from `npm run build` (build application)
+- Fixed environment variable syntax to properly set VITE_API_BASE_URL
 - This ensures all devDependencies (including TypeScript) are installed before attempting to build
 - The `npm ci` command installs exactly what's in package-lock.json, ensuring consistent builds
 
@@ -84,7 +85,7 @@ docker run -p 5000:5000 prolink-app
 
 ## Files Modified
 
-1. `Dockerfile` - Fixed TypeScript compilation issue
+1. `Dockerfile` - Fixed TypeScript compilation issue and environment variable syntax
 2. `.dockerignore` - Enhanced ignore patterns
 
 ## Expected Outcome
