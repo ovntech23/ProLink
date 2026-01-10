@@ -1,5 +1,12 @@
 import { create } from 'zustand';
 import { driverApi } from '../lib/api';
+import { 
+  initSocket, 
+  sendSocketMessage, 
+  onMessageReceived, 
+  onMessageSent,
+  disconnectSocket
+} from '../lib/socket';
 
 export type UserRole = 'broker' | 'driver' | 'owner';
 
@@ -41,7 +48,11 @@ export interface Shipment {
   weight: string;
   quantity?: number;
   description?: string;
-  dimensions?: { length: number; width: number; height: number; };
+  dimensions?: {
+    length: number;
+    width: number;
+    height: number;
+  };
   specialInstructions?: string;
   incidentNote?: string;
   pickupDate: string;
@@ -306,43 +317,74 @@ export const useStore = create<AppState>((set, get) => ({
       console.error('Failed to fetch drivers:', error);
     }
   },
-  
+
   login: (email) => {
     const user = get().users.find(u => u.email === email);
-    if (user) set({ currentUser: user });
+    if (user) {
+      set({ currentUser: user });
+      // Initialize WebSocket connection
+      initSocket(user.id);
+      
+      // Listen for incoming messages
+      onMessageReceived((message) => {
+        set((state) => ({
+          messages: [...state.messages, {
+            id: message.id,
+            senderId: message.senderId,
+            recipientId: message.recipientId,
+            content: message.content,
+            timestamp: message.timestamp,
+            read: false,
+            attachments: message.attachments
+          }]
+        }));
+      });
+    }
   },
-  
-  logout: () => set({ currentUser: null }),
-  
+
+  logout: () => {
+    set({ currentUser: null });
+    // Disconnect WebSocket
+    disconnectSocket();
+  },
+
   addShipment: (data) => {
     const newShipment: Shipment = {
       ...data,
       id: Math.random().toString(36).substr(2, 9),
       trackingId: `TRK-${Math.floor(100000 + Math.random() * 900000)}`,
-      statusHistory: [{ status: data.status, timestamp: new Date().toISOString(), note: 'Shipment created' }]
+      statusHistory: [{
+        status: data.status,
+        timestamp: new Date().toISOString(),
+        note: 'Shipment created'
+      }]
     };
     set(state => ({ shipments: [newShipment, ...state.shipments] }));
     return newShipment;
   },
-  
+
   assignDriver: (shipmentId, driverId) => {
     set(state => ({
-      shipments: state.shipments.map(s => 
-        s.id === shipmentId 
-          ? { 
-              ...s, 
-              driverId, 
+      shipments: state.shipments.map(s =>
+        s.id === shipmentId
+          ? {
+              ...s,
+              driverId,
               status: 'assigned',
               statusHistory: [
                 ...s.statusHistory,
-                { status: 'assigned', timestamp: new Date().toISOString(), note: `Driver assigned` }
+                {
+                  status: 'assigned',
+                  timestamp: new Date().toISOString(),
+                  note: `Driver assigned`
+                }
               ]
             }
           : s
       )
     }));
   },
-  
+
   addDriver: (data) => {
     const newDriver: DriverProfile = {
       ...data,
@@ -356,13 +398,13 @@ export const useStore = create<AppState>((set, get) => ({
       users: [...state.users, newDriver]
     }));
   },
-  
+
   updateDriverProfile: (driverId, updates, comment) => {
     set(state => {
-      const newDrivers = state.drivers.map(d => 
+      const newDrivers = state.drivers.map(d =>
         d.id === driverId ? { ...d, ...updates } : d
       );
-      const newUsers = state.users.map(u => 
+      const newUsers = state.users.map(u =>
         u.id === driverId ? { ...u, ...updates } : u
       );
       
@@ -378,7 +420,11 @@ export const useStore = create<AppState>((set, get) => ({
               ...s,
               statusHistory: [
                 ...s.statusHistory,
-                { status: s.status, timestamp: new Date().toISOString(), note: historyNote }
+                {
+                  status: s.status,
+                  timestamp: new Date().toISOString(),
+                  note: historyNote
+                }
               ]
             }
           }
@@ -386,31 +432,31 @@ export const useStore = create<AppState>((set, get) => ({
         });
       }
       
-      return {
-        drivers: newDrivers,
-        users: newUsers,
-        shipments: newShipments
-      };
+      return { drivers: newDrivers, users: newUsers, shipments: newShipments };
     });
   },
-  
+
   updateShipmentStatus: (shipmentId, status, note) => {
     set(state => ({
-      shipments: state.shipments.map(s => 
-        s.id === shipmentId 
-          ? { 
-              ...s, 
+      shipments: state.shipments.map(s =>
+        s.id === shipmentId
+          ? {
+              ...s,
               status,
               statusHistory: [
                 ...s.statusHistory,
-                { status, timestamp: new Date().toISOString(), note }
+                {
+                  status,
+                  timestamp: new Date().toISOString(),
+                  note
+                }
               ]
             }
           : s
       )
     }));
   },
-  
+
   addPayment: (payment) => {
     const newPayment: Payment = {
       ...payment,
@@ -418,33 +464,33 @@ export const useStore = create<AppState>((set, get) => ({
     };
     set(state => ({ payments: [newPayment, ...state.payments] }));
   },
-  
+
   updatePaymentStatus: (paymentId, status) => {
     set(state => ({
-      payments: state.payments.map(p => 
+      payments: state.payments.map(p =>
         p.id === paymentId ? { ...p, status } : p
       )
     }));
   },
-  
+
   approveUser: (userId) => {
     set(state => ({
-      users: state.users.map(u => 
+      users: state.users.map(u =>
         u.id === userId ? { ...u, isApproved: true } : u
       ),
-      drivers: state.drivers.map(d => 
+      drivers: state.drivers.map(d =>
         d.id === userId ? { ...d, isApproved: true } : d
       )
     }));
   },
-  
+
   deleteUser: (userId) => {
     set(state => ({
       users: state.users.filter(u => u.id !== userId),
       drivers: state.drivers.filter(d => d.id !== userId)
     }));
   },
-  
+
   signUp: (userData) => {
     const newUser = {
       ...userData,
@@ -459,29 +505,34 @@ export const useStore = create<AppState>((set, get) => ({
       return { users, drivers };
     });
   },
-  
+
   reportShipmentIncident: (shipmentId, note) => {
     set(state => ({
-      shipments: state.shipments.map(s => 
-        s.id === shipmentId 
-          ? { 
-              ...s, 
+      shipments: state.shipments.map(s =>
+        s.id === shipmentId
+          ? {
+              ...s,
               incidentNote: note,
               statusHistory: [
                 ...s.statusHistory,
-                { status: s.status, timestamp: new Date().toISOString(), note: `INCIDENT: ${note}` }
+                {
+                  status: s.status,
+                  timestamp: new Date().toISOString(),
+                  note: `INCIDENT: ${note}`
+                }
               ]
             }
           : s
       )
     }));
   },
-  
-sendMessage: (recipientId, content, attachments) => {
+
+  sendMessage: (recipientId, content, attachments) => {
     const { currentUser } = get();
     if (!currentUser) return;
     
-    const newMessage: Message = {
+    // Send message through WebSocket
+    const messageData = {
       id: Math.random().toString(36).substr(2, 9),
       senderId: currentUser.id,
       recipientId,
@@ -491,34 +542,36 @@ sendMessage: (recipientId, content, attachments) => {
       attachments
     };
     
-    set(state => ({
-      messages: [...state.messages, newMessage]
-    }));
+    // Send through WebSocket
+    sendSocketMessage(messageData);
+    
+    // Add to local state
+    set(state => ({ messages: [...state.messages, messageData] }));
   },
-  
+
   getMessagesBetweenUsers: (userId1, userId2) => {
     const state = get();
     return state.messages
-      .filter(m => 
+      .filter(m =>
         (m.senderId === userId1 && m.recipientId === userId2) ||
         (m.senderId === userId2 && m.recipientId === userId1)
       )
       .sort((a, b) => new Date(a.timestamp).getTime() - new Date(b.timestamp).getTime());
   },
-  
+
   getUnreadMessages: (userId) => {
     const state = get();
     return state.messages.filter(m => m.recipientId === userId && !m.read);
   },
-  
+
   markMessageAsRead: (messageId) => {
     set(state => ({
-      messages: state.messages.map(m => 
+      messages: state.messages.map(m =>
         m.id === messageId ? { ...m, read: true } : m
       )
     }));
   },
-  
+
   getConversations: (userId) => {
     const state = get();
     const conversations: { user: User; lastMessage: Message; unreadCount: number }[] = [];
@@ -543,13 +596,14 @@ sendMessage: (recipientId, content, attachments) => {
       if (!partner) return;
       
       const conversationMessages = userMessages.filter(
-        m => (m.senderId === userId && m.recipientId === partnerId) ||
-              (m.senderId === partnerId && m.recipientId === userId)
+        m =>
+          (m.senderId === userId && m.recipientId === partnerId) ||
+          (m.senderId === partnerId && m.recipientId === userId)
       );
       
       if (conversationMessages.length === 0) return;
       
-      const lastMessage = conversationMessages.reduce((latest, current) => 
+      const lastMessage = conversationMessages.reduce((latest, current) =>
         new Date(current.timestamp) > new Date(latest.timestamp) ? current : latest
       );
       
@@ -557,15 +611,11 @@ sendMessage: (recipientId, content, attachments) => {
         m => m.recipientId === userId && !m.read
       ).length;
       
-      conversations.push({
-        user: partner,
-        lastMessage,
-        unreadCount
-      });
+      conversations.push({ user: partner, lastMessage, unreadCount });
     });
     
     // Sort by last message timestamp
-    return conversations.sort((a, b) => 
+    return conversations.sort((a, b) =>
       new Date(b.lastMessage.timestamp).getTime() - new Date(a.lastMessage.timestamp).getTime()
     );
   }

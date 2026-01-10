@@ -5,6 +5,8 @@ const mongoose = require('mongoose');
 const morgan = require('morgan');
 const rateLimit = require('express-rate-limit');
 const path = require('path');
+const http = require('http');
+const { Server } = require('socket.io');
 
 // Load environment variables
 dotenv.config();
@@ -20,6 +22,68 @@ const featureRoutes = require('./routes/featureRoutes');
 
 // Initialize app
 const app = express();
+
+// Create HTTP server
+const server = http.createServer(app);
+
+// Initialize Socket.IO
+const io = new Server(server, {
+  cors: {
+    origin: "*",
+    methods: ["GET", "POST"]
+  }
+});
+
+// Store connected users
+const connectedUsers = new Map();
+
+// WebSocket connection handling
+io.on('connection', (socket) => {
+  console.log('User connected:', socket.id);
+
+  // Handle user joining
+  socket.on('join', (userId) => {
+    connectedUsers.set(userId, socket.id);
+    console.log(`User ${userId} joined with socket ${socket.id}`);
+  });
+
+  // Handle sending a message
+  socket.on('sendMessage', async (messageData) => {
+    try {
+      // Emit the message to the recipient if they're online
+      const recipientSocketId = connectedUsers.get(messageData.recipientId);
+      if (recipientSocketId) {
+        socket.to(recipientSocketId).emit('receiveMessage', messageData);
+      }
+      
+      // Also emit to sender for confirmation
+      socket.emit('messageSent', messageData);
+    } catch (error) {
+      console.error('Error sending message via WebSocket:', error);
+    }
+  });
+
+  // Handle typing indicator
+  socket.on('typing', (data) => {
+    const recipientSocketId = connectedUsers.get(data.recipientId);
+    if (recipientSocketId) {
+      socket.to(recipientSocketId).emit('userTyping', data);
+    }
+  });
+
+  // Handle disconnect
+  socket.on('disconnect', () => {
+    // Remove user from connected users map
+    for (let [userId, socketId] of connectedUsers.entries()) {
+      if (socketId === socket.id) {
+        connectedUsers.delete(userId);
+        console.log(`User ${userId} disconnected`);
+        break;
+      }
+    }
+    console.log('User disconnected:', socket.id);
+  });
+});
 
 // Rate limiting
 const generalLimiter = rateLimit({
@@ -102,10 +166,11 @@ const connectDB = async () => {
 // Initialize database connection
 connectDB();
 
+// Export io instance for use in controllers
+module.exports = { app, io };
+
 // Start server
 const PORT = process.env.PORT || 5000;
-app.listen(PORT, () => {
+server.listen(PORT, () => {
   console.log(`Server is running on port ${PORT}`);
 });
-
-module.exports = app;

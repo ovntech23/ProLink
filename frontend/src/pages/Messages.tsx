@@ -14,16 +14,18 @@ export const MessagesPage = () => {
   const [conversations, setConversations] = useState<any[]>([]);
   const isMobile = useIsMobile();
 
+  // Update conversations and messages when store changes
   useEffect(() => {
     if (currentUser) {
+      // Update conversations
       const userConversations = getConversations(currentUser.id);
       setConversations(userConversations);
-      
-      // If there's a selected user, load messages
+
+      // If there's a selected user, update messages
       if (selectedUser) {
         const userMessages = getMessagesBetweenUsers(currentUser.id, selectedUser.id);
         setMessages(userMessages);
-        
+
         // Mark messages as read
         userMessages
           .filter(m => m.recipientId === currentUser.id && !m.read)
@@ -31,6 +33,21 @@ export const MessagesPage = () => {
       }
     }
   }, [currentUser, selectedUser, getConversations, getMessagesBetweenUsers, markMessageAsRead]);
+
+  // Listen for real-time message updates
+  useEffect(() => {
+    // This effect will run whenever the messages in the store change
+    // The store's sendMessage function now uses WebSockets, so messages
+    // will be updated in real-time
+    if (currentUser && selectedUser) {
+      const userMessages = getMessagesBetweenUsers(currentUser.id, selectedUser.id);
+      setMessages(userMessages);
+      
+      // Update conversations as well since last message might have changed
+      const userConversations = getConversations(currentUser.id);
+      setConversations(userConversations);
+    }
+  }, [currentUser, selectedUser, getMessagesBetweenUsers, getConversations]);
 
   const handleSelectUser = (user: User) => {
     setSelectedUser(user);
