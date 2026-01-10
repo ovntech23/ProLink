@@ -138,6 +138,11 @@ app.get('/api', (req, res) => {
   res.json({ message: 'Frontend and Backend are successfully connected!' });
 });
 
+// Health check endpoint
+app.get('/health', (req, res) => {
+  res.status(200).json({ status: 'OK', timestamp: new Date().toISOString() });
+});
+
 // Catch all handler: send back React's index.html file for client-side routing
 app.get('*', (req, res) => {
   res.sendFile(path.join(__dirname, 'public', 'index.html'));

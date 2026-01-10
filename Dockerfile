@@ -1,6 +1,9 @@
 # Use Node.js 20 as base image for MERN stack
 FROM node:20-alpine
 
+# Install curl for health check
+RUN apk add --no-cache curl
+
 # Create app directory
 WORKDIR /app
 
@@ -37,9 +40,9 @@ EXPOSE 5000
 # Set working directory to backend
 WORKDIR /app/backend
 
-# Add health check with better error handling
-HEALTHCHECK --interval=30s --timeout=3s --start-period=5s --retries=3 \
-  CMD node -e "require('http').get('http://localhost:5000/api', (res) => {if (res.statusCode !== 200) process.exit(1)})" || exit 1
+# Add health check with curl and better error handling
+HEALTHCHECK --interval=30s --timeout=10s --start-period=10s --retries=3 \
+  CMD curl -f http://localhost:5000/health || exit 1
 
 # Start the application
 CMD ["npm", "start"]
