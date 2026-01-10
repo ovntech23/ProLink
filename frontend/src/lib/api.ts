@@ -107,6 +107,11 @@ export const userApi = {
       body: JSON.stringify(userData),
     });
   },
+
+  // Add method to fetch all users
+  getUsers: async () => {
+    return fetchApi<any[]>('/api/users');
+  },
 };
 
 // Shipment API
@@ -232,6 +237,34 @@ export const conversationsApi = {
   getConversationMessages: async (conversationId: string): Promise<any[]> => {
     const response = await fetchApi<any[]>(`/api/conversations/${conversationId}/messages`);
     return response.data;
+  },
+};
+
+// Payment API
+export const paymentApi = {
+  getPayments: async () => {
+    return fetchApi<any[]>('/api/payments');
+  },
+
+  updatePaymentStatus: async (id: string, status: string) => {
+    return fetchApi<any>(`/api/payments/${id}`, {
+      method: 'PUT',
+      body: JSON.stringify({ status }),
+    });
+  },
+};
+
+// Message API
+export const messageApi = {
+  getMessages: async () => {
+    return fetchApi<any[]>('/api/messages');
+  },
+
+  sendMessage: async (messageData: { recipientId: string; content: string; attachments?: any[] }) => {
+    return fetchApi<any>('/api/messages', {
+      method: 'POST',
+      body: JSON.stringify(messageData),
+    });
   },
 };
 

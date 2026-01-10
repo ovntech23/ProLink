@@ -1,5 +1,5 @@
 import { create } from 'zustand';
-import { driverApi, authApi } from '../lib/api';
+import { driverApi, authApi, userApi, shipmentApi, paymentApi, messageApi } from '../lib/api';
 import { initSocket, sendSocketMessage, onMessageReceived, disconnectSocket } from '../lib/socket';
 
 export type UserRole = 'broker' | 'driver' | 'owner';
@@ -114,153 +114,26 @@ interface AppState {
   getConversations: (userId: string) => { user: User; lastMessage: Message; unreadCount: number }[];
 }
 
-const MOCK_DRIVERS: DriverProfile[] = [
-  {
-    id: 'd1',
-    name: 'John Doe',
-    email: 'john@driver.com',
-    role: 'driver',
-    status: 'available',
-    vehicleType: 'Truck 10T',
-    vehiclePlate: 'ABC-1234',
-    vehicleModel: 'Volvo FH16',
-    vehicleCategory: 'Heavy Load',
-    trailerPlate: 'TRL-9988',
-    phone: '+260 96 123 4567',
-    currentLocation: 'Lusaka',
-    isApproved: true
-  },
-  {
-    id: 'd2',
-    name: 'Jane Smith',
-    email: 'jane@driver.com',
-    role: 'driver',
-    status: 'busy',
-    vehicleType: 'Van',
-    vehiclePlate: 'XYZ-9876',
-    vehicleModel: 'Mercedes Sprinter',
-    vehicleCategory: 'Light Delivery',
-    phone: '+260 97 888 9999',
-    currentLocation: 'Ndola',
-    isApproved: true
-  }
-];
-
-const MOCK_USERS: User[] = [
-  { id: 'b1', name: 'ProLink Admin', email: 'admin@prolink.com', role: 'broker', isApproved: true },
-  { id: 'o1', name: 'Cargo King Ltd', email: 'client@cargoking.com', role: 'owner', isApproved: true, phone: '+260 95 555 1122' },
-  { id: 'o2', name: 'New Cargo Co', email: 'new@cargo.com', role: 'owner', isApproved: false, phone: '+260 96 444 8899' },
-  ...MOCK_DRIVERS
-];
-
-const MOCK_PAYMENTS: Payment[] = [
-  {
-    id: 'p1',
-    shipmentId: 's1',
-    amount: 15000,
-    currency: 'ZMW',
-    status: 'completed',
-    date: '2025-01-02T10:00:00Z',
-    payer: 'Cargo King Ltd',
-    payee: 'ProLink Logistics',
-    type: 'client_invoice'
-  },
-  {
-    id: 'p2',
-    shipmentId: 's1',
-    amount: 5000,
-    currency: 'ZMW',
-    status: 'pending',
-    date: '2025-01-03T08:00:00Z',
-    payer: 'ProLink Logistics',
-    payee: 'Jane Smith',
-    type: 'driver_payment'
-  }
-];
-
-const MOCK_SHIPMENTS: Shipment[] = [
-  {
-    id: 's1',
-    trackingId: 'TRK-885421',
-    ownerId: 'o1',
-    driverId: 'd2',
-    origin: 'Lusaka South MFEZ',
-    destination: 'Copperbelt Hub, Kitwe',
-    status: 'in_transit',
-    cargoType: 'Electronics',
-    weight: '2500kg',
-    pickupDate: '2025-01-02',
-    statusHistory: [
-      { status: 'pending', timestamp: '2025-01-01T08:00:00Z', note: 'Order created' },
-      { status: 'assigned', timestamp: '2025-01-01T10:00:00Z', note: 'Driver assigned' },
-      { status: 'picked_up', timestamp: '2025-01-02T09:00:00Z', note: 'Cargo picked up at MFEZ' },
-      { status: 'in_transit', timestamp: '2025-01-02T14:30:00Z', note: 'Passing Kabwe' }
-    ]
-  }
-];
-
-const MOCK_MESSAGES: Message[] = [
-  {
-    id: 'm1',
-    senderId: 'o1',
-    recipientId: 'b1',
-    content: 'Hello, I have a shipment that needs to be delivered to Kitwe.',
-    timestamp: '2025-01-01T09:00:00Z',
-    read: true
-  },
-  {
-    id: 'm2',
-    senderId: 'b1',
-    recipientId: 'o1',
-    content: 'Sure, we can arrange that for you. What is the cargo type?',
-    timestamp: '2025-01-01T09:15:00Z',
-    read: true
-  },
-  {
-    id: 'm3',
-    senderId: 'o1',
-    recipientId: 'b1',
-    content: 'It\'s electronics equipment, about 2.5 tons.',
-    timestamp: '2025-01-01T09:20:00Z',
-    read: true
-  },
-  {
-    id: 'm4',
-    senderId: 'd2',
-    recipientId: 'b1',
-    content: 'I\'m available for the Kitwe delivery tomorrow.',
-    timestamp: '2025-01-01T10:00:00Z',
-    read: true
-  },
-  {
-    id: 'm5',
-    senderId: 'o1',
-    recipientId: 'b1',
-    content: 'Here are the shipping documents:',
-    timestamp: '2025-01-01T10:30:00Z',
-    read: true,
-    attachments: [
-      { id: 'a1', name: 'invoice.pdf', type: 'application/pdf', url: '#', size: 102400 },
-      { id: 'a2', name: 'cargo-photo.jpg', type: 'image/jpeg', url: '#', size: 204800 }
-    ]
-  }
-];
-
 export const useStore = create<AppState>((set, get) => ({
   currentUser: null,
-  users: MOCK_USERS,
-  drivers: MOCK_DRIVERS,
-  shipments: MOCK_SHIPMENTS,
-  payments: MOCK_PAYMENTS,
-  messages: MOCK_MESSAGES,
+  users: [],
+  drivers: [],
+  shipments: [],
+  payments: [],
+  messages: [],
 
   // Initialize store with data from API
   init: async () => {
     try {
       const { data: drivers } = await driverApi.getDrivers();
-      set({ drivers });
+      const { data: users } = await userApi.getUsers();
+      const { data: shipments } = await shipmentApi.getShipments();
+      const { data: payments } = await paymentApi.getPayments();
+      const { data: messages } = await messageApi.getMessages();
+
+      set({ drivers, users, shipments, payments, messages });
     } catch (error) {
-      console.error('Failed to fetch drivers:', error);
+      console.error('Failed to initialize store:', error);
     }
   },
 
@@ -279,8 +152,7 @@ export const useStore = create<AppState>((set, get) => ({
             recipientId: message.recipientId,
             content: message.content,
             timestamp: message.timestamp,
-            read: false,
-            attachments: message.attachments
+            read: message.read
           }]
         }));
       });
