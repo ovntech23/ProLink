@@ -299,19 +299,24 @@ const connectDB = async () => {
     console.log(`MongoDB Connected: ${conn.connection.host}`);
   } catch (error) {
     console.error('Database connection error:', error);
-    console.error('Server cannot start without database connection. Exiting...');
-    process.exit(1);
+    if (process.env.NODE_ENV === 'production') {
+      console.error('Server cannot start without database connection in production. Exiting...');
+      process.exit(1);
+    } else {
+      console.warn('⚠️  Warning: Running without database connection in development mode.');
+      console.warn('⚠️  Please start MongoDB or update MONGODB_URI in your .env file.');
+    }
   }
 };
 
 // Initialize database connection
 connectDB();
 
-// Export io instance for use in controllers
-module.exports = { app, io };
-
 // Start server
 const PORT = process.env.PORT || 5000;
 server.listen(PORT, () => {
   console.log(`Server is running on port ${PORT}`);
 });
+
+// Export io instance for use in controllers (after server initialization to avoid circular dependency)
+module.exports = { app, io, server };
