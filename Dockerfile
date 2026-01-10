@@ -1,5 +1,5 @@
-# Use Node.js 18 as base image for MERN stack
-FROM node:18-alpine
+# Use Node.js 20 as base image for MERN stack
+FROM node:20-alpine
 
 # Create app directory
 WORKDIR /app
