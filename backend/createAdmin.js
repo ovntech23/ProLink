@@ -1,0 +1,73 @@
+const mongoose = require('mongoose');
+const bcrypt = require('bcryptjs');
+const dotenv = require('dotenv');
+const User = require('./models/User');
+
+// Load environment variables
+dotenv.config();
+
+const createAdminUser = async () => {
+  try {
+    // Connect to MongoDB
+    await mongoose.connect(process.env.MONGODB_URI, {
+      useNewUrlParser: true,
+      useUnifiedTopology: true,
+    });
+    console.log('✅ Connected to MongoDB');
+
+    // Check if admin already exists
+    const existingAdmin = await User.findOne({ role: 'admin' });
+    if (existingAdmin) {
+      console.log('⚠️  Admin user already exists:', existingAdmin.email);
+      console.log('   If you need to create a new admin, please delete the existing one first.');
+      process.exit(0);
+    }
+
+    // Admin user details - CHANGE THESE VALUES
+    const adminData = {
+      name: 'ProLink Admin',
+      email: 'admin@prolinkafrica.com',
+      password: 'Admin@123456', // This will be hashed
+      role: 'admin',
+      phone: '+260-XXX-XXXXXX',
+      isApproved: true, // Admin is automatically approved
+    };
+
+    console.log('\n📝 Creating admin user with the following details:');
+    console.log('   Name:', adminData.name);
+    console.log('   Email:', adminData.email);
+    console.log('   Password:', adminData.password, '(will be hashed)');
+    console.log('   Role:', adminData.role);
+    console.log('   Phone:', adminData.phone);
+
+    // Hash the password
+    const salt = await bcrypt.genSalt(10);
+    const hashedPassword = await bcrypt.hash(adminData.password, salt);
+
+    // Create admin user
+    const admin = new User({
+      name: adminData.name,
+      email: adminData.email,
+      password: hashedPassword,
+      role: adminData.role,
+      phone: adminData.phone,
+      isApproved: adminData.isApproved,
+    });
+
+    await admin.save();
+
+    console.log('\n✅ Admin user created successfully!');
+    console.log('\n🔐 Login credentials:');
+    console.log('   Email:', adminData.email);
+    console.log('   Password:', adminData.password);
+    console.log('\n⚠️  IMPORTANT: Please change the password after first login!');
+    console.log('⚠️  Store these credentials securely and delete this script output.\n');
+
+    process.exit(0);
+  } catch (error) {
+    console.error('❌ Error creating admin user:', error);
+    process.exit(1);
+  }
+};
+
+createAdminUser();
