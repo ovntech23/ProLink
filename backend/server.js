@@ -295,19 +295,27 @@ app.use((err, req, res, next) => {
 // Connect to MongoDB
 const connectDB = async () => {
   try {
+    console.log('Attempting to connect to MongoDB...');
+    console.log('MongoDB URI:', process.env.MONGODB_URI);
+    
     const conn = await mongoose.connect(process.env.MONGODB_URI, {
       useNewUrlParser: true,
       useUnifiedTopology: true,
     });
-    console.log(`MongoDB Connected: ${conn.connection.host}`);
+    console.log(`✅ MongoDB Connected: ${conn.connection.host}`);
+    console.log(`✅ Database: ${conn.connection.name}`);
   } catch (error) {
-    console.error('Database connection error:', error);
+    console.error('❌ Database connection error:', error.message);
+    console.error('❌ MongoDB URI used:', process.env.MONGODB_URI);
+    
     if (process.env.NODE_ENV === 'production') {
-      console.error('Server cannot start without database connection in production. Exiting...');
+      console.error('❌ Server cannot start without database connection in production. Exiting...');
       process.exit(1);
     } else {
       console.warn('⚠️  Warning: Running without database connection in development mode.');
       console.warn('⚠️  Please start MongoDB or update MONGODB_URI in your .env file.');
+      console.warn('💡 Tip: You can use Docker to run MongoDB locally:');
+      console.warn('   docker-compose up -d mongodb');
     }
   }
 };

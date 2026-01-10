@@ -2,7 +2,7 @@ import { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useStore } from '../store/useStore';
 import { Footer } from '../components/layout/Footer';
-import { Truck, Shield, Package, MapPin } from 'lucide-react';
+import { Truck, Shield, Package, MapPin, Eye, EyeOff } from 'lucide-react';
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
@@ -13,11 +13,9 @@ import prolinkLogo from '../assets/prolink logo.png';
 export const Login = () => {
   const { login, users } = useStore();
   const navigate = useNavigate();
-  const [formData, setFormData] = useState({
-    email: '',
-    password: ''
-  });
+  const [formData, setFormData] = useState({ email: '', password: '' });
   const [loading, setLoading] = useState(false);
+  const [showPassword, setShowPassword] = useState(false);
 
   const handleLogin = async (email: string, password: string) => {
     setLoading(true);
@@ -54,12 +52,14 @@ export const Login = () => {
   };
 
   const handleFormChange = (field: string, value: string) => {
-    setFormData(prev => ({ ...prev, [field]: value }));
+    setFormData(prev => ({
+      ...prev,
+      [field]: value
+    }));
   };
 
   const handleFormSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    
     // Basic validation
     if (!formData.email || !formData.password) {
       toast({
@@ -93,6 +93,10 @@ export const Login = () => {
 
     // Attempt login
     await handleLogin(formData.email, formData.password);
+  };
+
+  const togglePasswordVisibility = () => {
+    setShowPassword(!showPassword);
   };
 
   return (
@@ -145,39 +149,49 @@ export const Login = () => {
             <form onSubmit={handleFormSubmit} className="space-y-4 mb-8 pb-8 border-b border-border">
               <div className="space-y-2">
                 <Label htmlFor="email">Email</Label>
-                <Input 
-                  id="email" 
-                  type="email" 
-                  placeholder="Enter your email" 
-                  value={formData.email} 
-                  onChange={(e) => handleFormChange('email', e.target.value)} 
-                  required 
-                  autoComplete="email" 
+                <Input
+                  id="email"
+                  type="email"
+                  placeholder="Enter your email"
+                  value={formData.email}
+                  onChange={(e) => handleFormChange('email', e.target.value)}
+                  required
+                  autoComplete="email"
                 />
               </div>
               <div className="space-y-2">
                 <Label htmlFor="password">Password</Label>
-                <Input 
-                  id="password" 
-                  type="password" 
-                  placeholder="Enter your password" 
-                  value={formData.password} 
-                  onChange={(e) => handleFormChange('password', e.target.value)} 
-                  required 
-                  autoComplete="current-password" 
-                />
+                <div className="relative">
+                  <Input
+                    id="password"
+                    type={showPassword ? "text" : "password"}
+                    placeholder="Enter your password"
+                    value={formData.password}
+                    onChange={(e) => handleFormChange('password', e.target.value)}
+                    required
+                    autoComplete="current-password"
+                  />
+                  <Button
+                    type="button"
+                    variant="ghost"
+                    size="icon"
+                    className="absolute right-2 top-1/2 transform -translate-y-1/2"
+                    onClick={togglePasswordVisibility}
+                  >
+                    {showPassword ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
+                  </Button>
+                </div>
               </div>
               <Button type="submit" className="w-full" disabled={loading}>
                 {loading ? "Signing In..." : "Sign In"}
               </Button>
             </form>
-            
             <div className="space-y-4">
               <div className="text-center text-xs text-muted-foreground p-4 bg-muted/50 rounded-lg">
                 Demo accounts have been removed. Please use the form above to log in with real credentials, or sign up for a new account.
               </div>
-              <Button 
-                variant="outline" 
+              <Button
+                variant="outline"
                 className="w-full p-4 rounded-xl border border-border hover:border-primary hover:bg-primary/10 transition-all flex items-center gap-4 justify-center"
                 onClick={handleSignUp}
               >
