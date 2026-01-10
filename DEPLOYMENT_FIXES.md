@@ -7,7 +7,7 @@ This document summarizes the fixes implemented to resolve the Docker deployment 
 
 ### 1. 🔴 TypeScript Compiler Not Found
 **Error**: `sh: tsc: not found`
-**Cause**: The Docker build process was running `tsc -b && vite build` but TypeScript was not installed as a dependency.
+**Cause**: The Docker build process was running `tsc -b && vite build` but TypeScript was not installed as a dependency during the build phase.
 
 ### 2. 🔴 Environment Variable Warning
 **Warning**: `NODE_ENV=production` skips devDependencies installation which are often required for building.
@@ -21,18 +21,20 @@ This document summarizes the fixes implemented to resolve the Docker deployment 
 
 ### 1. ✅ Fixed TypeScript Compilation Issue
 **File**: `Dockerfile`
-**Change**: Updated the frontend build command to properly install all dependencies including TypeScript:
+**Change**: Updated the frontend build process to properly install all dependencies including TypeScript:
 ```dockerfile
 # Before (causing the error):
 RUN cd frontend && VITE_API_BASE_URL= npm ci && VITE_API_BASE_URL= npm run build
 
 # After (fixed):
-RUN cd frontend && npm ci && VITE_API_BASE_URL= npm run build
+RUN cd frontend && npm ci
+RUN cd frontend && VITE_API_BASE_URL= npm run build
 ```
 
 **Explanation**: 
-- Removed `VITE_API_BASE_URL=` before `npm ci` to ensure all dependencies including TypeScript are installed
-- Kept `VITE_API_BASE_URL=` only for the build command as intended
+- Separated `npm ci` (install dependencies) from `npm run build` (build application)
+- This ensures all devDependencies (including TypeScript) are installed before attempting to build
+- The `npm ci` command installs exactly what's in package-lock.json, ensuring consistent builds
 
 ### 2. ✅ Improved .dockerignore Configuration
 **File**: `.dockerignore`
