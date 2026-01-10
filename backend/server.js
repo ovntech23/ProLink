@@ -7,6 +7,9 @@ const rateLimit = require('express-rate-limit');
 const path = require('path');
 const http = require('http');
 const { Server } = require('socket.io');
+const Message = require('./models/Message');
+const Conversation = require('./models/Conversation');
+const User = require('./models/User');
 
 // Load environment variables
 dotenv.config();
@@ -50,14 +53,80 @@ io.on('connection', (socket) => {
   // Handle sending a message
   socket.on('sendMessage', async (messageData) => {
     try {
-      // Emit the message to the recipient if they're online
-      const recipientSocketId = connectedUsers.get(messageData.recipientId);
-      if (recipientSocketId) {
-        socket.to(recipientSocketId).emit('receiveMessage', messageData);
+      // Find sender ID from connected users
+      let senderId;
+      for (let [userId, socketId] of connectedUsers.entries()) {
+        if (socketId === socket.id) {
+          senderId = userId;
+          break;
+        }
       }
-      
-      // Also emit to sender for confirmation
-      socket.emit('messageSent', messageData);
+
+      if (!senderId) {
+        console.error('Sender not found in connected users');
+        return;
+      }
+
+      const { recipientId, content, attachments } = messageData;
+
+      // Check if recipient exists
+      const recipient = await User.findById(recipientId);
+      if (!recipient) {
+        console.error('Recipient not found');
+        return;
+      }
+
+      // Find or create conversation
+      let conversation = await Conversation.findOne({
+        participants: { $all: [senderId, recipientId] }
+      });
+
+      if (!conversation) {
+        conversation = new Conversation({
+          participants: [senderId, recipientId]
+        });
+        await conversation.save();
+      }
+
+      // Create and save message
+      const message = new Message({
+        conversationId: conversation._id,
+        sender: senderId,
+        recipient: recipientId,
+        content,
+        attachments
+      });
+
+      const savedMessage = await message.save();
+
+      // Populate sender and recipient
+      await savedMessage.populate('sender', 'name email role');
+      await savedMessage.populate('recipient', 'name email role');
+
+      // Update conversation's updatedAt
+      conversation.updatedAt = new Date();
+      await conversation.save();
+
+      // Prepare message data for emission
+      const messageDataToEmit = {
+        id: savedMessage._id,
+        conversationId: conversation._id,
+        senderId: savedMessage.sender._id,
+        recipientId: savedMessage.recipient._id,
+        content: savedMessage.content,
+        attachments: savedMessage.attachments,
+        timestamp: savedMessage.createdAt,
+        read: savedMessage.read
+      };
+
+      // Emit to recipient if online
+      const recipientSocketId = connectedUsers.get(recipientId);
+      if (recipientSocketId) {
+        socket.to(recipientSocketId).emit('receiveMessage', messageDataToEmit);
+      }
+
+      // Emit to sender for confirmation
+      socket.emit('messageSent', messageDataToEmit);
     } catch (error) {
       console.error('Error sending message via WebSocket:', error);
     }

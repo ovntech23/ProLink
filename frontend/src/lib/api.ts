@@ -195,6 +195,46 @@ export const featuresApi = {
   },
 };
 
+// Messages API
+export const messagesApi = {
+  getMessages: async (): Promise<any[]> => {
+    const response = await fetchApi<any[]>('/api/messages');
+    return response.data;
+  },
+  sendMessage: async (messageData: { recipientId: string; content: string; attachments?: any[] }): Promise<any> => {
+    const response = await fetchApi<any>('/api/messages', {
+      method: 'POST',
+      body: JSON.stringify(messageData),
+    });
+    return response.data;
+  },
+  markAsRead: async (messageId: string): Promise<any> => {
+    const response = await fetchApi<any>(`/api/messages/${messageId}/read`, {
+      method: 'PUT',
+    });
+    return response.data;
+  },
+};
+
+// Conversations API
+export const conversationsApi = {
+  getConversations: async (): Promise<any[]> => {
+    const response = await fetchApi<any[]>('/api/conversations');
+    return response.data;
+  },
+  startConversation: async (participantId: string): Promise<any> => {
+    const response = await fetchApi<any>('/api/conversations', {
+      method: 'POST',
+      body: JSON.stringify({ participantId }),
+    });
+    return response.data;
+  },
+  getConversationMessages: async (conversationId: string): Promise<any[]> => {
+    const response = await fetchApi<any[]>(`/api/conversations/${conversationId}/messages`);
+    return response.data;
+  },
+};
+
 // Export the base fetchApi function for custom requests and types
 export { fetchApi };
 export type { Statistic, Cargo, Feature };
