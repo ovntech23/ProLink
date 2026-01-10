@@ -49,6 +49,7 @@ export const SignUp = () => {
     signUp({
       name: formData.name,
       email: formData.email,
+      password: formData.password,
       role: formData.role as any,
       phone: formData.phone,
     });
