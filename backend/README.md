@@ -7,7 +7,7 @@ This is the backend API for the ProLink logistics platform, built with Node.js, 
 The backend is configured to connect to MongoDB. The connection string can be configured in the `.env` file:
 
 ```
-MONGODB_URI=mongodb://localhost:27017/prolink
+MONGODB_URI=mongodb://admin:password@localhost:27017/prolink?authSource=admin
 ```
 
 ### Using Docker (Recommended)
@@ -84,7 +84,7 @@ Create a `.env` file in the backend directory with the following variables:
 ```
 NODE_ENV=development
 PORT=5000
-MONGODB_URI=mongodb://localhost:27017/prolink
+MONGODB_URI=mongodb://admin:password@localhost:27017/prolink?authSource=admin
 JWT_SECRET=prolink_jwt_secret_key_change_in_production
 ```
 
@@ -99,3 +99,16 @@ npm run dev
 
 # Run in production mode
 npm start
+
+## Docker Deployment
+
+The application can be deployed using Docker with the updated docker-compose configuration:
+
+1. Make sure Docker Desktop is installed and running
+2. Run the following command from the backend directory:
+
+```bash
+docker-compose up -d
+```
+
+This will start both the MongoDB container and the application container with proper security configurations.
