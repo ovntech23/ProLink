@@ -21,7 +21,7 @@ const userSchema = new mongoose.Schema({
   },
   role: {
     type: String,
-    enum: ['driver', 'owner', 'broker'],
+    enum: ['driver', 'owner', 'broker', 'admin'],
     default: 'owner'
   },
   // Driver-specific fields
