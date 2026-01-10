@@ -88,6 +88,18 @@ MONGODB_URI=mongodb://admin:password@localhost:27017/prolink?authSource=admin
 JWT_SECRET=prolink_jwt_secret_key_change_in_production
 ```
 
+## CORS Configuration
+
+The application is configured to allow CORS requests from the following origins:
+- `http://localhost:5173` (Frontend development server)
+- `http://localhost:5000` (Backend server)
+- `http://*.sslip.io` (Coolify deployed applications)
+- `https://*.sslip.io` (Secure Coolify deployed applications)
+- `http://prolinkafrica.com` (Production domain)
+- `https://prolinkafrica.com` (Secure production domain)
+
+This allows the frontend to communicate with the backend API in both development and production environments.
+
 ## Running the Server
 
 ```bash

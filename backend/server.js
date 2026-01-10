@@ -110,7 +110,21 @@ const authLimiter = rateLimit({
 app.use(generalLimiter);
 
 // Middleware
-app.use(cors());
+// Configure CORS to allow requests from deployed frontend
+const corsOptions = {
+  origin: [
+    'http://localhost:5173', // Local development
+    'http://localhost:5000', // Backend on same host
+    'http://*.sslip.io', // Coolify deployed apps
+    'https://*.sslip.io', // Secure Coolify deployed apps
+    'http://prolinkafrica.com', // Production domain
+    'https://prolinkafrica.com' // Secure production domain
+  ],
+  credentials: true,
+  optionsSuccessStatus: 200
+};
+
+app.use(cors(corsOptions));
 app.use(express.json());
 app.use(morgan('combined'));
 
