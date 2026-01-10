@@ -173,32 +173,9 @@ export const Login = () => {
             </form>
             
             <div className="space-y-4">
-              <p className="text-sm font-medium text-muted-foreground text-center uppercase tracking-wider">
-                Select Login Role (Demo)
-              </p>
-              {[
-                users.find(u => u.role === 'broker' && u.isApproved),
-                users.find(u => u.role === 'owner' && u.isApproved),
-                users.find(u => u.role === 'driver' && u.isApproved)
-              ].filter(Boolean).map((user) => (
-                <Button 
-                  key={user!.id} 
-                  variant="outline" 
-                  className="w-full p-4 rounded-xl border border-border hover:border-primary hover:bg-primary/10 transition-all flex items-center gap-4 group justify-start"
-                  onClick={() => handleLogin(user!.email, 'password123')}
-                >
-                  <div className="w-10 h-10 rounded-full bg-muted flex items-center justify-center text-foreground group-hover:bg-primary group-hover:text-primary-foreground transition-colors">
-                    {user!.role === 'broker' && <Shield size={20} />}
-                    {user!.role === 'owner' && <Package size={20} />}
-                    {user!.role === 'driver' && <Truck size={20} />}
-                  </div>
-                  <div className="text-left">
-                    <MapPin size={14} className="text-[#ba0b0b]" />
-                    <p className="font-bold text-foreground group-hover:text-primary">{user!.name}</p>
-                    <p className="text-xs text-muted-foreground capitalize">{user!.role} Account</p>
-                  </div>
-                </Button>
-              ))}
+              <div className="text-center text-xs text-muted-foreground p-4 bg-muted/50 rounded-lg">
+                Demo accounts have been removed. Please use the form above to log in with real credentials, or sign up for a new account.
+              </div>
               <Button 
                 variant="outline" 
                 className="w-full p-4 rounded-xl border border-border hover:border-primary hover:bg-primary/10 transition-all flex items-center gap-4 justify-center"

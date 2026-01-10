@@ -61,10 +61,11 @@ io.use((socket, next) => {
 
   try {
     const decoded = verify(token, process.env.JWT_SECRET);
+    console.log('WebSocket JWT decoded:', decoded); // Debug log
     socket.user = decoded; // Attach user info to socket
     next();
   } catch (error) {
-    console.error('WebSocket connection rejected: Invalid token');
+    console.error('WebSocket connection rejected: Invalid token', error.message);
     next(new Error('Authentication error: Invalid token'));
   }
 });
@@ -74,25 +75,27 @@ io.on('connection', (socket) => {
   console.log('User connected:', socket.id);
 
   // Handle user joining
-  socket.on('join', (userId) => {
-    connectedUsers.set(userId, socket.id);
-    console.log(`User ${userId} joined with socket ${socket.id}`);
+  socket.on('join', () => {
+    console.log('Socket join called, socket.user:', socket.user); // Debug log
+    // Use the verified user from the JWT token instead of client-provided userId
+    if (socket.user && socket.user.userId) {
+      connectedUsers.set(socket.user.userId, socket.id);
+      console.log(`User ${socket.user.userId} joined with socket ${socket.id}`);
+    } else {
+      console.error('Socket join attempted without valid user authentication');
+      socket.emit('error', { message: 'Authentication required' });
+    }
   });
 
   // Handle sending a message
   socket.on('sendMessage', async (messageData) => {
     try {
-      // Find sender ID from connected users
-      let senderId;
-      for (let [userId, socketId] of connectedUsers.entries()) {
-        if (socketId === socket.id) {
-          senderId = userId;
-          break;
-        }
-      }
-
+      // Use the verified user from the JWT token
+      const senderId = socket.user?.userId;
+      
       if (!senderId) {
-        console.error('Sender not found in connected users');
+        console.error('Sender not authenticated');
+        socket.emit('error', { message: 'Authentication required to send messages' });
         return;
       }
 

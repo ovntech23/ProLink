@@ -144,11 +144,14 @@ export const useStore = create<AppState>((set, get) => ({
       // Store token in localStorage
       localStorage.setItem('token', response.data.token);
       
-      // Find user in existing users or create new user object
-      let user = get().users.find(u => u.email === response.data.user.email);
-      if (!user) {
-        user = response.data.user as User;
-      }
+      // Create user object from response.user
+      const user = {
+        id: response.data.user._id,
+        name: response.data.user.name,
+        email: response.data.user.email,
+        role: response.data.user.role,
+        isApproved: true // Assume approved for login
+      } as User;
       
       // Set current user
       set({ currentUser: user });
