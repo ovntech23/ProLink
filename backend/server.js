@@ -40,7 +40,8 @@ const io = new Server(server, {
       'http://*.sslip.io', // Coolify deployed apps
       'https://*.sslip.io', // Secure Coolify deployed apps
       'http://prolinkafrica.com', // Production domain
-      'https://prolinkafrica.com' // Secure production domain
+      'https://prolinkafrica.com', // Secure production domain
+      'https://www.prolinkafrica.com' // Secure production domain (www)
     ],
     methods: ["GET", "POST"],
     credentials: true
@@ -242,7 +243,8 @@ const corsOptions = {
     'http://*.sslip.io', // Coolify deployed apps
     'https://*.sslip.io', // Secure Coolify deployed apps
     'http://prolinkafrica.com', // Production domain
-    'https://prolinkafrica.com' // Secure production domain
+    'https://prolinkafrica.com', // Secure production domain
+    'https://www.prolinkafrica.com' // Secure production domain (www)
   ],
   credentials: true,
   optionsSuccessStatus: 200
