@@ -1,4 +1,4 @@
-import { LayoutDashboard, Truck, Package, UserCircle, LogOut, PlusCircle, CreditCard, X, UserCheck, MessageCircle } from 'lucide-react';
+import { LayoutDashboard, Truck, Package, UserCircle, LogOut, PlusCircle, CreditCard, X, UserCheck, MessageCircle, Users } from 'lucide-react';
 import { NavLink, useNavigate } from 'react-router-dom';
 import { useStore } from '../../store/useStore';
 import clsx from 'clsx';
@@ -41,6 +41,7 @@ export const Sidebar = ({ isOpen, onClose }: SidebarProps) => {
     ],
     admin: [
       { icon: LayoutDashboard, label: 'Dashboard', to: '/admin' },
+      { icon: Users, label: 'User Management', to: '/admin/users' },
       { icon: Package, label: 'Cargo Management', to: '/admin/cargo' },
       { icon: Truck, label: 'Transporters', to: '/admin/drivers' },
       { icon: CreditCard, label: 'Billing & Payments', to: '/admin/billing' },

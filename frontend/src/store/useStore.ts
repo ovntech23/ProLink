@@ -111,6 +111,8 @@ interface AppState {
   getMessagesBetweenUsers: (userId1: string, userId2: string) => Message[];
   getUnreadMessages: (userId: string) => Message[];
   markMessageAsRead: (messageId: string) => void;
+  adminCreateUser: (userData: any) => Promise<void>;
+  adminUpdateUser: (userId: string, updates: any) => Promise<void>;
   getConversations: (userId: string) => { user: User; lastMessage: Message; unreadCount: number }[];
 }
 
@@ -295,26 +297,69 @@ export const useStore = create<AppState>((set, get) => ({
     }));
   },
 
-  approveUser: (userId) => {
-    set(state => ({
-      users: state.users.map(u =>
-        u.id === userId
-          ? { ...u, isApproved: true }
-          : u
-      ),
-      drivers: state.drivers.map(d =>
-        d.id === userId
-          ? { ...d, isApproved: true }
-          : d
-      )
-    }));
+  approveUser: async (userId) => {
+    try {
+      await userApi.updateUser(userId, { isApproved: true });
+      set(state => ({
+        users: state.users.map(u => u.id === userId ? { ...u, isApproved: true } : u),
+        drivers: state.drivers.map(d => d.id === userId ? { ...d, isApproved: true } : d)
+      }));
+    } catch (error) {
+      console.error('Failed to approve user:', error);
+    }
   },
 
-  deleteUser: (userId) => {
-    set(state => ({
-      users: state.users.filter(u => u.id !== userId),
-      drivers: state.drivers.filter(d => d.id !== userId)
-    }));
+  deleteUser: async (userId) => {
+    try {
+      await userApi.deleteUser(userId);
+      set(state => ({
+        users: state.users.filter(u => u.id !== userId),
+        drivers: state.drivers.filter(d => d.id !== userId)
+      }));
+    } catch (error) {
+      console.error('Failed to delete user:', error);
+    }
+  },
+
+  adminCreateUser: async (userData) => {
+    try {
+      const response = await userApi.createUser(userData);
+      const newUser = {
+        id: response.data._id,
+        name: response.data.name,
+        email: response.data.email,
+        role: response.data.role,
+        isApproved: true,
+        phone: userData.phone
+      } as User;
+
+      set(state => ({
+        users: [newUser, ...state.users],
+        drivers: newUser.role === 'driver' ? [newUser as DriverProfile, ...state.drivers] : state.drivers
+      }));
+    } catch (error) {
+      console.error('Failed to create user:', error);
+      throw error;
+    }
+  },
+
+  adminUpdateUser: async (userId, updates) => {
+    try {
+      const response = await userApi.updateUser(userId, updates);
+      // Map API response to store User format if needed, or just apply updates locally
+      // leveraging the fact that updates contains the changed fields
+
+      set(state => {
+        const updateFn = (u: any) => u.id === userId ? { ...u, ...updates } : u;
+        return {
+          users: state.users.map(updateFn),
+          drivers: state.drivers.map(updateFn)
+        };
+      });
+    } catch (error) {
+      console.error('Failed to update user:', error);
+      throw error;
+    }
   },
 
   signUp: async (userData) => {

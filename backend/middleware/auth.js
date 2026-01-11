@@ -93,7 +93,8 @@ const admin = (req, res, next) => {
     });
   }
 
-  if (req.user.role !== 'broker') {
+  // Allow 'admin' role or 'broker' (legacy admin)
+  if (req.user.role !== 'admin' && req.user.role !== 'broker') {
     return res.status(403).json({
       success: false,
       message: 'Admin access required'

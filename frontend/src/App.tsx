@@ -18,6 +18,7 @@ import { Toaster } from '@/components/ui/toaster';
 import { Toaster as Sonner } from '@/components/ui/sonner';
 import { TooltipProvider } from '@/components/ui/tooltip';
 import { UserApproval } from './pages/broker/UserApproval';
+import { UserManagement } from './pages/admin/UserManagement';
 import { PrivacyPolicy } from './pages/legal/PrivacyPolicy';
 import { TermsOfService } from './pages/legal/TermsOfService';
 import { MessagesPage } from './pages/Messages';
@@ -46,6 +47,7 @@ function App() {
           {/* Admin Routes - Reuse Broker Dashboard for now */}
           <Route path="/admin" element={<DashboardLayout />}>
             <Route index element={<BrokerDashboard />} />
+            <Route path="users" element={<UserManagement />} />
             <Route path="cargo" element={<CargoList />} />
             <Route path="drivers" element={<DriversList />} />
             <Route path="drivers/:driverId" element={<DriverProfile />} />

@@ -123,6 +123,23 @@ export const userApi = {
   getUsers: async () => {
     return fetchApi<any[]>('/api/users');
   },
+  createUser: async (userData: any) => {
+    return fetchApi<any>('/api/users', {
+      method: 'POST',
+      body: JSON.stringify(userData),
+    });
+  },
+  updateUser: async (userId: string, updates: any) => {
+    return fetchApi<any>(`/api/users/${userId}`, {
+      method: 'PUT',
+      body: JSON.stringify(updates),
+    });
+  },
+  deleteUser: async (userId: string) => {
+    return fetchApi<{ message: string }>(`/api/users/${userId}`, {
+      method: 'DELETE',
+    });
+  },
 };
 
 // Shipment API
