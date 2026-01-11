@@ -1,7 +1,7 @@
 import { useState, useEffect } from 'react';
 import { useStore } from '../store/useStore';
 import { MessageBubble } from '../components/messages/MessageBubble';
-import { MessageInput } from '../components/messages/MessageInput.tsx';
+import { MessageInput } from '../components/messages/MessageInput';
 import { ConversationList } from '../components/messages/ConversationList';
 import { useIsMobile } from '../hooks/use-mobile';
 import { ArrowLeft } from 'lucide-react';
@@ -42,7 +42,7 @@ export const MessagesPage = () => {
     if (currentUser && selectedUser) {
       const userMessages = getMessagesBetweenUsers(currentUser.id, selectedUser.id);
       setMessages(userMessages);
-      
+
       // Update conversations as well since last message might have changed
       const userConversations = getConversations(currentUser.id);
       setConversations(userConversations);
@@ -51,16 +51,16 @@ export const MessagesPage = () => {
 
   const handleSelectUser = (user: User) => {
     setSelectedUser(user);
-    
+
     if (currentUser) {
       const userMessages = getMessagesBetweenUsers(currentUser.id, user.id);
       setMessages(userMessages);
-      
+
       // Mark messages as read
       userMessages
         .filter(m => m.recipientId === currentUser.id && !m.read)
         .forEach(m => markMessageAsRead(m.id));
-      
+
       // Refresh conversations
       const updatedConversations = getConversations(currentUser.id);
       setConversations(updatedConversations);
