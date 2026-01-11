@@ -11,12 +11,12 @@ const CACHE_TTL = {
  * Cache user conversations
  */
 async function cacheConversation(userId, conversationData) {
+    if (!redisClient) return false;
     try {
         const key = `conversation:${userId}`;
         await redisClient.setex(key, CACHE_TTL.CONVERSATION, JSON.stringify(conversationData));
         return true;
     } catch (error) {
-        console.error('Error caching conversation:', error);
         return false;
     }
 }
@@ -25,12 +25,12 @@ async function cacheConversation(userId, conversationData) {
  * Get cached conversation
  */
 async function getCachedConversation(userId) {
+    if (!redisClient) return null;
     try {
         const key = `conversation:${userId}`;
         const data = await redisClient.get(key);
         return data ? JSON.parse(data) : null;
     } catch (error) {
-        console.error('Error getting cached conversation:', error);
         return null;
     }
 }
@@ -39,12 +39,12 @@ async function getCachedConversation(userId) {
  * Cache a message
  */
 async function cacheMessage(messageId, messageData) {
+    if (!redisClient) return false;
     try {
         const key = `message:${messageId}`;
         await redisClient.setex(key, CACHE_TTL.MESSAGE, JSON.stringify(messageData));
         return true;
     } catch (error) {
-        console.error('Error caching message:', error);
         return false;
     }
 }
@@ -53,12 +53,12 @@ async function cacheMessage(messageId, messageData) {
  * Get cached message
  */
 async function getCachedMessage(messageId) {
+    if (!redisClient) return null;
     try {
         const key = `message:${messageId}`;
         const data = await redisClient.get(key);
         return data ? JSON.parse(data) : null;
     } catch (error) {
-        console.error('Error getting cached message:', error);
         return null;
     }
 }
@@ -67,15 +67,13 @@ async function getCachedMessage(messageId) {
  * Set user as online
  */
 async function setUserOnline(userId, socketId) {
+    if (!redisClient) return false;
     try {
         const key = `user:online:${userId}`;
         await redisClient.setex(key, CACHE_TTL.USER_PRESENCE, socketId);
-
-        // Add to online users set
         await redisClient.sadd('users:online', userId);
         return true;
     } catch (error) {
-        console.error('Error setting user online:', error);
         return false;
     }
 }
@@ -84,15 +82,13 @@ async function setUserOnline(userId, socketId) {
  * Set user as offline
  */
 async function setUserOffline(userId) {
+    if (!redisClient) return false;
     try {
         const key = `user:online:${userId}`;
         await redisClient.del(key);
-
-        // Remove from online users set
         await redisClient.srem('users:online', userId);
         return true;
     } catch (error) {
-        console.error('Error setting user offline:', error);
         return false;
     }
 }
@@ -101,12 +97,12 @@ async function setUserOffline(userId) {
  * Check if user is online
  */
 async function isUserOnline(userId) {
+    if (!redisClient) return false;
     try {
         const key = `user:online:${userId}`;
         const exists = await redisClient.exists(key);
         return exists === 1;
     } catch (error) {
-        console.error('Error checking user online status:', error);
         return false;
     }
 }
@@ -115,11 +111,11 @@ async function isUserOnline(userId) {
  * Get all online users
  */
 async function getOnlineUsers() {
+    if (!redisClient) return [];
     try {
         const userIds = await redisClient.smembers('users:online');
         return userIds;
     } catch (error) {
-        console.error('Error getting online users:', error);
         return [];
     }
 }
@@ -128,12 +124,12 @@ async function getOnlineUsers() {
  * Invalidate conversation cache
  */
 async function invalidateConversationCache(userId) {
+    if (!redisClient) return false;
     try {
         const key = `conversation:${userId}`;
         await redisClient.del(key);
         return true;
     } catch (error) {
-        console.error('Error invalidating conversation cache:', error);
         return false;
     }
 }
