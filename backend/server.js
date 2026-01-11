@@ -92,7 +92,7 @@ io.on('connection', (socket) => {
     try {
       // Use the verified user from the JWT token
       const senderId = socket.user?.userId;
-      
+
       if (!senderId) {
         console.error('Sender not authenticated');
         socket.emit('error', { message: 'Authentication required to send messages' });
@@ -216,18 +216,18 @@ app.use(helmet({
     directives: {
       defaultSrc: ["'self'"],
       styleSrc: ["'self'", "'unsafe-inline'", "https:", "data:"],
-      scriptSrc: ["'self'", "'unsafe-inline'", "https:", "data:"],
-      imgSrc: ["'self'", "https:", "data:"],
+      scriptSrc: ["'self'", "'unsafe-inline'", "https:", "data:", "blob:"],
+      workerSrc: ["'self'", "blob:"],
+      imgSrc: ["'self'", "https:", "data:", "blob:"],
       connectSrc: ["'self'", "https:", "ws:", "wss:"],
       fontSrc: ["'self'", "https:", "data:"],
       objectSrc: ["'none'"],
       mediaSrc: ["'self'", "https:"],
       frameSrc: ["'none'"],
-      childSrc: ["'self'"],
+      childSrc: ["'self'", "blob:"],
       frameAncestors: ["'none'"],
       formAction: ["'self'"],
       baseUri: ["'self'"],
-      upgradeInsecureRequests: [],
     },
   },
   crossOriginEmbedderPolicy: false,
@@ -297,7 +297,7 @@ const connectDB = async () => {
   try {
     console.log('Attempting to connect to MongoDB...');
     console.log('MongoDB URI:', process.env.MONGODB_URI);
-    
+
     const conn = await mongoose.connect(process.env.MONGODB_URI, {
       useNewUrlParser: true,
       useUnifiedTopology: true,
@@ -307,7 +307,7 @@ const connectDB = async () => {
   } catch (error) {
     console.error('❌ Database connection error:', error.message);
     console.error('❌ MongoDB URI used:', process.env.MONGODB_URI);
-    
+
     if (process.env.NODE_ENV === 'production') {
       console.error('❌ Server cannot start without database connection in production. Exiting...');
       process.exit(1);
