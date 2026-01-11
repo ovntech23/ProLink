@@ -299,7 +299,7 @@ export const useStore = create<AppState>((set, get) => ({
 
   approveUser: async (userId) => {
     try {
-      await userApi.updateUser(userId, { isApproved: true });
+      await userApi.adminUpdateUser(userId, { isApproved: true });
       set(state => ({
         users: state.users.map(u => u.id === userId ? { ...u, isApproved: true } : u),
         drivers: state.drivers.map(d => d.id === userId ? { ...d, isApproved: true } : d)
@@ -345,7 +345,7 @@ export const useStore = create<AppState>((set, get) => ({
 
   adminUpdateUser: async (userId, updates) => {
     try {
-      const response = await userApi.updateUser(userId, updates);
+      await userApi.adminUpdateUser(userId, updates);
       // Map API response to store User format if needed, or just apply updates locally
       // leveraging the fact that updates contains the changed fields
 

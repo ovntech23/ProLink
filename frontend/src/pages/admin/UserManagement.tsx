@@ -1,5 +1,6 @@
 import { useState } from 'react';
-import { useStore, User } from '../../store/useStore';
+import { useStore } from '../../store/useStore';
+import type { User } from '../../store/useStore';
 import {
     Table,
     TableBody,
@@ -15,7 +16,6 @@ import {
     DialogFooter,
     DialogHeader,
     DialogTitle,
-    DialogTrigger,
 } from "@/components/ui/dialog";
 import {
     AlertDialog,
@@ -32,7 +32,7 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Badge } from "@/components/ui/badge";
-import { Plus, Pencil, Trash2, Search, Shield, Truck, Package } from 'lucide-react';
+import { Plus, Pencil, Trash2, Search } from 'lucide-react';
 import { toast } from "@/components/ui/use-toast";
 
 export const UserManagement = () => {
