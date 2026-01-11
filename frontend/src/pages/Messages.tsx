@@ -6,12 +6,12 @@ import { ConversationList } from '../components/messages/ConversationList';
 import { useIsMobile } from '../hooks/use-mobile';
 import { ArrowLeft, Plus } from 'lucide-react';
 import type { User } from '../store/useStore';
-import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from '../components/ui/dialog';
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription, DialogTrigger } from '../components/ui/dialog';
 import { Button } from '../components/ui/button';
 import { Avatar, AvatarFallback } from '../components/ui/avatar';
 
 export const MessagesPage = () => {
-  const { currentUser, users, getConversations, getMessagesBetweenUsers, markMessageAsRead, sendMessage } = useStore();
+  const { currentUser, users, onlineUsers, getConversations, getMessagesBetweenUsers, markMessageAsRead, sendMessage } = useStore();
   const [selectedUser, setSelectedUser] = useState<User | null>(null);
   const [messages, setMessages] = useState<any[]>([]);
   const [conversations, setConversations] = useState<any[]>([]);
@@ -173,6 +173,7 @@ export const MessagesPage = () => {
             conversations={conversations}
             onSelectUser={handleSelectUser}
             currentUser={currentUser}
+            onlineUsers={onlineUsers}
           />
         </div>
       );
@@ -225,6 +226,7 @@ export const MessagesPage = () => {
             conversations={conversations}
             onSelectUser={handleSelectUser}
             currentUser={currentUser}
+            onlineUsers={onlineUsers}
           />
         </div>
 

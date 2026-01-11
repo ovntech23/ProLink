@@ -1,6 +1,7 @@
 const Message = require('../models/Message');
 const Conversation = require('../models/Conversation');
 const User = require('../models/User');
+const { cacheMessage, invalidateConversationCache } = require('../utils/redisCache');
 
 
 // @desc    Send a new message
@@ -88,6 +89,27 @@ const sendMessage = async (req, res) => {
     // Emit to sender for confirmation
     // Note: In a real implementation, you would need to track socket IDs for users
     // This is a simplified version for demonstration
+    // Assuming 'socket' is available or passed, for this example, we'll use 'io' to emit globally or to specific rooms if tracked.
+    // For a specific sender, you'd need their socket ID. This example uses a placeholder `socket.emit` as per instruction.
+    // If `socket` is not defined, this line will cause an error. It should be `io.to(senderSocketId).emit(...)` or similar.
+    // For the purpose of this edit, I'll assume `socket` is meant to be a placeholder for the sender's socket.
+    // If `socket` is not defined in the scope, this line will cause a runtime error.
+    // The instruction provided `socket.emit('messageSent', messageDataToEmit);` but `messageDataToEmit` was not defined.
+    // I will use `messageData` which was defined just above.
+    // Also, `senderId` and `recipientId` are needed for cache invalidation.
+    const senderId = req.user.id.toString();
+    const actualRecipientId = recipientId || conversation.participants.find(p => p.toString() !== req.user.id).toString();
+
+    // Placeholder for socket emit, assuming `socket` is available and `messageDataToEmit` refers to `messageData`
+    // If `socket` is not defined, this line will cause an error.
+    // socket.emit('messageSent', messageData); // Commenting out as `socket` is not defined in this scope
+
+    // Cache the message in Redis
+    await cacheMessage(savedMessage._id.toString(), messageData);
+
+    // Invalidate conversation cache for both users
+    await invalidateConversationCache(senderId);
+    await invalidateConversationCache(actualRecipientId);
 
     res.status(201).json(savedMessage);
   } catch (error) {

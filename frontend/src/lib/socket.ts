@@ -46,9 +46,16 @@ export const sendSocketMessage = (messageData: any) => {
 };
 
 // Listen for incoming messages
-export const onMessageReceived = (callback: (message: Message) => void) => {
+export const onMessageReceived = (callback: (message: any) => void) => {
   if (socket) {
     socket.on('receiveMessage', callback);
+    socket.on('messageSent', callback);
+  }
+};
+
+export const onOnlineUsersUpdate = (callback: (userIds: string[]) => void) => {
+  if (socket) {
+    socket.on('onlineUsers', callback);
   }
 };
 

@@ -1,6 +1,6 @@
 import { create } from 'zustand';
 import { driverApi, authApi, userApi, shipmentApi, paymentApi, messageApi } from '../lib/api';
-import { initSocket, sendSocketMessage, onMessageReceived, disconnectSocket } from '../lib/socket';
+import { initSocket, sendSocketMessage, onMessageReceived, onOnlineUsersUpdate, disconnectSocket } from '../lib/socket';
 
 export type UserRole = 'broker' | 'driver' | 'owner';
 
@@ -94,6 +94,7 @@ interface AppState {
   shipments: Shipment[];
   payments: Payment[];
   messages: Message[];
+  onlineUsers: string[];
   login: (email: string, password: string) => Promise<User | null>;
   logout: () => void;
   addShipment: (shipment: Omit<Shipment, 'id' | 'trackingId' | 'statusHistory'>) => Shipment;
@@ -125,6 +126,7 @@ export const useStore = create<AppState>((set, get) => ({
   shipments: [],
   payments: [],
   messages: [],
+  onlineUsers: [],
 
   // Initialize store with data from API
   init: async () => {
@@ -252,6 +254,11 @@ export const useStore = create<AppState>((set, get) => ({
             read: message.read
           }]
         }));
+      });
+
+      // Setup online users listener
+      onOnlineUsersUpdate((userIds) => {
+        set({ onlineUsers: userIds });
       });
 
       // Fetch initial data

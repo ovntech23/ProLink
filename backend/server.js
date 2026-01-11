@@ -12,6 +12,8 @@ const { verify } = require('jsonwebtoken');
 const Message = require('./models/Message');
 const Conversation = require('./models/Conversation');
 const User = require('./models/User');
+const { redisClient, redisPub, redisSub } = require('./config/redis');
+const { setUserOnline, setUserOffline, getOnlineUsers } = require('./utils/redisCache');
 
 // Load environment variables
 dotenv.config();
@@ -78,11 +80,19 @@ io.on('connection', (socket) => {
   console.log('User connected:', socket.id);
 
   // Handle user joining
-  socket.on('join', () => {
+  socket.on('join', async () => {
     console.log('Socket join called, socket.user:', socket.user); // Debug log
     // Use the verified user from the JWT token instead of client-provided userId
     if (socket.user && socket.user.userId) {
       connectedUsers.set(socket.user.userId, socket.id);
+
+      // Set user as online in Redis
+      await setUserOnline(socket.user.userId, socket.id);
+
+      // Broadcast online users to all clients
+      const onlineUsers = await getOnlineUsers();
+      io.emit('onlineUsers', onlineUsers);
+
       console.log(`User ${socket.user.userId} joined with socket ${socket.id}`);
     } else {
       console.error('Socket join attempted without valid user authentication');
@@ -176,11 +186,19 @@ io.on('connection', (socket) => {
   });
 
   // Handle disconnect
-  socket.on('disconnect', () => {
+  socket.on('disconnect', async () => {
     // Remove user from connected users map
     for (let [userId, socketId] of connectedUsers.entries()) {
       if (socketId === socket.id) {
         connectedUsers.delete(userId);
+
+        // Set user as offline in Redis
+        await setUserOffline(userId);
+
+        // Broadcast updated online users
+        const onlineUsers = await getOnlineUsers();
+        io.emit('onlineUsers', onlineUsers);
+
         console.log(`User ${userId} disconnected`);
         break;
       }

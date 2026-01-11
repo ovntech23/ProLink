@@ -11,14 +11,15 @@ interface ConversationListProps {
   conversations: Conversation[];
   onSelectUser: (user: User) => void;
   currentUser: User | null;
+  onlineUsers?: string[];
 }
 
-export const ConversationList = ({ conversations, onSelectUser, currentUser }: ConversationListProps) => {
+export const ConversationList = ({ conversations, onSelectUser, currentUser, onlineUsers = [] }: ConversationListProps) => {
   const formatTime = (timestamp: string) => {
     const date = new Date(timestamp);
     const now = new Date();
     const diffInDays = Math.floor((now.getTime() - date.getTime()) / (1000 * 60 * 60 * 24));
-    
+
     if (diffInDays === 0) {
       return date.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
     } else if (diffInDays === 1) {
@@ -41,7 +42,7 @@ export const ConversationList = ({ conversations, onSelectUser, currentUser }: C
           {conversations.map((conversation) => {
             const { user, lastMessage, unreadCount } = conversation;
             const isCurrentUserSender = lastMessage.senderId === currentUser?.id;
-            
+
             return (
               <div
                 key={user.id}
@@ -49,11 +50,16 @@ export const ConversationList = ({ conversations, onSelectUser, currentUser }: C
                 onClick={() => onSelectUser(user)}
               >
                 <div className="flex items-center gap-3">
-                  <Avatar>
-                    <AvatarFallback className="bg-[#ba0b0b] text-white">
-                      {user.name.charAt(0)}
-                    </AvatarFallback>
-                  </Avatar>
+                  <div className="relative">
+                    <Avatar>
+                      <AvatarFallback className="bg-[#ba0b0b] text-white">
+                        {user.name.charAt(0)}
+                      </AvatarFallback>
+                    </Avatar>
+                    {onlineUsers.includes(user.id) && (
+                      <div className="absolute bottom-0 right-0 w-3 h-3 bg-green-500 border-2 border-white rounded-full" />
+                    )}
+                  </div>
                   <div className="flex-1 min-w-0">
                     <div className="flex justify-between items-baseline">
                       <h4 className="font-medium text-foreground truncate">{user.name}</h4>
@@ -66,7 +72,7 @@ export const ConversationList = ({ conversations, onSelectUser, currentUser }: C
                         {isCurrentUserSender ? `You: ${lastMessage.content}` : lastMessage.content}
                       </p>
                       {unreadCount > 0 && (
-<span className="bg-[#ba0b0b] text-white text-xs rounded-full h-5 w-5 flex items-center justify-center shrink-0">
+                        <span className="bg-[#ba0b0b] text-white text-xs rounded-full h-5 w-5 flex items-center justify-center shrink-0">
                           {unreadCount}
                         </span>
                       )}
