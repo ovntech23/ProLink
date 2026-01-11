@@ -1,4 +1,5 @@
 import { BrowserRouter, Routes, Route, Navigate } from 'react-router-dom';
+import { useEffect } from 'react';
 import { DashboardLayout } from './components/layout/DashboardLayout';
 import { Login } from './pages/Login';
 import { SignUp } from './pages/SignUp';
@@ -22,8 +23,15 @@ import { UserManagement } from './pages/admin/UserManagement';
 import { PrivacyPolicy } from './pages/legal/PrivacyPolicy';
 import { TermsOfService } from './pages/legal/TermsOfService';
 import { MessagesPage } from './pages/Messages';
+import { useStore } from './store/useStore';
 
 function App() {
+  const { checkAuth } = useStore();
+
+  useEffect(() => {
+    checkAuth();
+  }, [checkAuth]);
+
   return (
     <TooltipProvider>
       <Toaster />

@@ -114,6 +114,8 @@ interface AppState {
   adminCreateUser: (userData: any) => Promise<void>;
   adminUpdateUser: (userId: string, updates: any) => Promise<void>;
   getConversations: (userId: string) => { user: User; lastMessage: Message; unreadCount: number }[];
+  checkAuth: () => Promise<void>;
+  init: () => Promise<void>;
 }
 
 export const useStore = create<AppState>((set, get) => ({
@@ -175,10 +177,53 @@ export const useStore = create<AppState>((set, get) => ({
         }));
       });
 
+      // Initialize store data
+      await get().init();
+
       return user;
     } catch (error) {
       console.error('Login failed:', error);
       return null;
+    }
+  },
+
+  checkAuth: async () => {
+    const token = localStorage.getItem('token');
+    if (!token) return;
+
+    try {
+      const response = await userApi.getCurrentUser();
+      const user = {
+        id: response.data._id,
+        name: response.data.name,
+        email: response.data.email,
+        role: response.data.role,
+        isApproved: true
+      } as User;
+
+      set({ currentUser: user });
+      initSocket(token);
+
+      // Setup message listener
+      onMessageReceived((message) => {
+        set((state) => ({
+          messages: [...state.messages, {
+            id: message.id,
+            senderId: message.senderId,
+            recipientId: message.recipientId,
+            content: message.content,
+            timestamp: message.timestamp,
+            read: message.read
+          }]
+        }));
+      });
+
+      // Fetch initial data
+      await get().init();
+    } catch (error) {
+      console.error('Auth check failed:', error);
+      localStorage.removeItem('token');
+      set({ currentUser: null });
     }
   },
 
