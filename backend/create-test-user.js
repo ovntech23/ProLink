@@ -14,7 +14,7 @@ async function createTestUser() {
     console.log('✅ Connected to MongoDB');
 
     // Check if test user already exists
-    const existingUser = await User.findOne({ email: 'test@example.com' });
+    const existingUser = await User.findOne({ email: 'test@example.com' }).select('+password');
     if (existingUser) {
       console.log('✅ Test user already exists:', existingUser.email);
       console.log('✅ User ID:', existingUser._id);

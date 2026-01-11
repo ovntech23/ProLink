@@ -11,7 +11,7 @@ import { toast } from "@/hooks/use-toast";
 import prolinkLogo from '../assets/prolink logo.png';
 
 export const Login = () => {
-  const { login, users } = useStore();
+  const { login } = useStore();
   const navigate = useNavigate();
   const [formData, setFormData] = useState({ email: '', password: '' });
   const [loading, setLoading] = useState(false);
@@ -20,15 +20,12 @@ export const Login = () => {
   const handleLogin = async (email: string, password: string) => {
     setLoading(true);
     try {
-      const success = await login(email, password);
-      if (success) {
-        // Get the user to determine where to navigate
-        const user = users.find(u => u.email === email);
-        if (user) {
-          if (user.role === 'broker') navigate('/broker');
-          else if (user.role === 'owner') navigate('/owner/shipments');
-          else if (user.role === 'driver') navigate('/driver/jobs');
-        }
+      const user = await login(email, password);
+      if (user) {
+        if (user.role === 'broker') navigate('/broker');
+        else if (user.role === 'owner') navigate('/owner/shipments');
+        else if (user.role === 'driver') navigate('/driver/jobs');
+        else if (user.role === 'admin') navigate('/admin');
       } else {
         toast({
           title: "Login Failed",

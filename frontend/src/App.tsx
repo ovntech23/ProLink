@@ -32,33 +32,44 @@ function App() {
           <Route path="/login" element={<Login />} />
           <Route path="/signup" element={<SignUp />} />
 
-      {/* Broker Routes */}
-      <Route path="/broker" element={<DashboardLayout />}>
-        <Route index element={<BrokerDashboard />} />
-        <Route path="cargo" element={<CargoList />} />
-        <Route path="drivers" element={<DriversList />} />
-        <Route path="drivers/:driverId" element={<DriverProfile />} />
-        <Route path="billing" element={<Billing />} />
-        <Route path="approvals" element={<UserApproval />} />
-        <Route path="messages" element={<MessagesPage />} />
-      </Route>
+          {/* Broker Routes */}
+          <Route path="/broker" element={<DashboardLayout />}>
+            <Route index element={<BrokerDashboard />} />
+            <Route path="cargo" element={<CargoList />} />
+            <Route path="drivers" element={<DriversList />} />
+            <Route path="drivers/:driverId" element={<DriverProfile />} />
+            <Route path="billing" element={<Billing />} />
+            <Route path="approvals" element={<UserApproval />} />
+            <Route path="messages" element={<MessagesPage />} />
+          </Route>
 
-      {/* Cargo Owner Routes */}
-      <Route path="/owner" element={<DashboardLayout />}>
-        <Route index element={<Navigate to="shipments" replace />} />
-        <Route path="shipments" element={<MyShipments />} />
-        <Route path="book" element={<BookShipment />} />
-        <Route path="tracking/:id" element={<Tracking />} />
-        <Route path="messages" element={<MessagesPage />} />
-      </Route>
+          {/* Admin Routes - Reuse Broker Dashboard for now */}
+          <Route path="/admin" element={<DashboardLayout />}>
+            <Route index element={<BrokerDashboard />} />
+            <Route path="cargo" element={<CargoList />} />
+            <Route path="drivers" element={<DriversList />} />
+            <Route path="drivers/:driverId" element={<DriverProfile />} />
+            <Route path="billing" element={<Billing />} />
+            <Route path="approvals" element={<UserApproval />} />
+            <Route path="messages" element={<MessagesPage />} />
+          </Route>
 
-      {/* Driver Routes */}
-      <Route path="/driver" element={<DashboardLayout />}>
-        <Route index element={<Navigate to="jobs" replace />} />
-        <Route path="jobs" element={<JobBoard />} />
-        <Route path="profile" element={<Profile />} />
-        <Route path="messages" element={<MessagesPage />} />
-      </Route>
+          {/* Cargo Owner Routes */}
+          <Route path="/owner" element={<DashboardLayout />}>
+            <Route index element={<Navigate to="shipments" replace />} />
+            <Route path="shipments" element={<MyShipments />} />
+            <Route path="book" element={<BookShipment />} />
+            <Route path="tracking/:id" element={<Tracking />} />
+            <Route path="messages" element={<MessagesPage />} />
+          </Route>
+
+          {/* Driver Routes */}
+          <Route path="/driver" element={<DashboardLayout />}>
+            <Route index element={<Navigate to="jobs" replace />} />
+            <Route path="jobs" element={<JobBoard />} />
+            <Route path="profile" element={<Profile />} />
+            <Route path="messages" element={<MessagesPage />} />
+          </Route>
 
           <Route path="/track" element={<PublicTracking />} />
           <Route path="/privacy" element={<PrivacyPolicy />} />

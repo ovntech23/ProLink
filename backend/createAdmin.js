@@ -19,7 +19,10 @@ const createAdminUser = async () => {
     const existingAdmin = await User.findOne({ role: 'admin' });
     if (existingAdmin) {
       console.log('⚠️  Admin user already exists:', existingAdmin.email);
-      console.log('   If you need to create a new admin, please delete the existing one first.');
+      console.log('   Updating password...');
+      existingAdmin.password = 'Admin@123456';
+      await existingAdmin.save();
+      console.log('✅ Admin password updated to: Admin@123456');
       process.exit(0);
     }
 
@@ -40,15 +43,13 @@ const createAdminUser = async () => {
     console.log('   Role:', adminData.role);
     console.log('   Phone:', adminData.phone);
 
-    // Hash the password
-    const salt = await bcrypt.genSalt(10);
-    const hashedPassword = await bcrypt.hash(adminData.password, salt);
+
 
     // Create admin user
     const admin = new User({
       name: adminData.name,
       email: adminData.email,
-      password: hashedPassword,
+      password: adminData.password,
       role: adminData.role,
       phone: adminData.phone,
       isApproved: adminData.isApproved,

@@ -1,7 +1,7 @@
 const Message = require('../models/Message');
 const Conversation = require('../models/Conversation');
 const User = require('../models/User');
-const { io } = require('../server');
+
 
 // @desc    Send a new message
 // @route   POST /api/messages
@@ -9,6 +9,8 @@ const { io } = require('../server');
 const sendMessage = async (req, res) => {
   try {
     const { conversationId, recipientId, content, attachments } = req.body;
+    // Dynamic import to avoid circular dependency
+    const { io } = require('../server');
 
     // Validate input
     if (!content || content.trim() === '') {
@@ -67,27 +69,27 @@ const sendMessage = async (req, res) => {
     await savedMessage.populate('sender', 'name email role');
     await savedMessage.populate('recipient', 'name email role');
 
-  // Update conversation's updatedAt timestamp
-  conversation.updatedAt = new Date();
-  await conversation.save();
+    // Update conversation's updatedAt timestamp
+    conversation.updatedAt = new Date();
+    await conversation.save();
 
-  // Emit WebSocket event to recipient if they're online
-  const messageData = {
-    id: savedMessage._id,
-    conversationId: conversation._id,
-    sender: savedMessage.sender,
-    recipient: savedMessage.recipient,
-    content: savedMessage.content,
-    attachments: savedMessage.attachments,
-    createdAt: savedMessage.createdAt,
-    read: savedMessage.read
-  };
+    // Emit WebSocket event to recipient if they're online
+    const messageData = {
+      id: savedMessage._id,
+      conversationId: conversation._id,
+      sender: savedMessage.sender,
+      recipient: savedMessage.recipient,
+      content: savedMessage.content,
+      attachments: savedMessage.attachments,
+      createdAt: savedMessage.createdAt,
+      read: savedMessage.read
+    };
 
-  // Emit to sender for confirmation
-  // Note: In a real implementation, you would need to track socket IDs for users
-  // This is a simplified version for demonstration
-  
-  res.status(201).json(savedMessage);
+    // Emit to sender for confirmation
+    // Note: In a real implementation, you would need to track socket IDs for users
+    // This is a simplified version for demonstration
+
+    res.status(201).json(savedMessage);
   } catch (error) {
     console.error(error);
     res.status(500).json({ message: 'Server error' });
@@ -105,10 +107,10 @@ const getMessages = async (req, res) => {
         { recipient: req.user.id }
       ]
     })
-    .populate('sender', 'name email role')
-    .populate('recipient', 'name email role')
-    .populate('conversationId')
-    .sort({ createdAt: -1 });
+      .populate('sender', 'name email role')
+      .populate('recipient', 'name email role')
+      .populate('conversationId')
+      .sort({ createdAt: -1 });
 
     res.json(messages);
   } catch (error) {

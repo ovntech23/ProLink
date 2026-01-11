@@ -38,6 +38,14 @@ export const Sidebar = ({ isOpen, onClose }: SidebarProps) => {
       { icon: Truck, label: 'My Jobs', to: '/driver/jobs' },
       { icon: UserCircle, label: 'My Profile', to: '/driver/profile' },
       { icon: MessageCircle, label: 'Messages', to: '/driver/messages' },
+    ],
+    admin: [
+      { icon: LayoutDashboard, label: 'Dashboard', to: '/admin' },
+      { icon: Package, label: 'Cargo Management', to: '/admin/cargo' },
+      { icon: Truck, label: 'Transporters', to: '/admin/drivers' },
+      { icon: CreditCard, label: 'Billing & Payments', to: '/admin/billing' },
+      { icon: UserCheck, label: 'User Approvals', to: '/admin/approvals' },
+      { icon: MessageCircle, label: 'Messages', to: '/admin/messages' },
     ]
   };
 

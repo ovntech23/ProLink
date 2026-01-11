@@ -94,7 +94,7 @@ interface AppState {
   shipments: Shipment[];
   payments: Payment[];
   messages: Message[];
-  login: (email: string, password: string) => Promise<boolean>;
+  login: (email: string, password: string) => Promise<User | null>;
   logout: () => void;
   addShipment: (shipment: Omit<Shipment, 'id' | 'trackingId' | 'statusHistory'>) => Shipment;
   assignDriver: (shipmentId: string, driverId: string) => void;
@@ -140,25 +140,25 @@ export const useStore = create<AppState>((set, get) => ({
   login: async (email, password) => {
     try {
       const response = await authApi.login({ email, password });
-      
+
       // Store token in localStorage
       localStorage.setItem('token', response.data.token);
-      
+
       // Create user object from response.user
       const user = {
-        id: response.data.user._id,
-        name: response.data.user.name,
-        email: response.data.user.email,
-        role: response.data.user.role,
+        id: response.data._id,
+        name: response.data.name,
+        email: response.data.email,
+        role: response.data.role,
         isApproved: true // Assume approved for login
       } as User;
-      
+
       // Set current user
       set({ currentUser: user });
-      
+
       // Initialize WebSocket connection with token
       initSocket(response.data.token);
-      
+
       // Listen for incoming messages
       onMessageReceived((message) => {
         set((state) => ({
@@ -172,11 +172,11 @@ export const useStore = create<AppState>((set, get) => ({
           }]
         }));
       });
-      
-      return true;
+
+      return user;
     } catch (error) {
       console.error('Login failed:', error);
-      return false;
+      return null;
     }
   },
 

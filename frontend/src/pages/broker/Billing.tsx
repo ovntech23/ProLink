@@ -47,6 +47,12 @@ export const Billing = () => {
     .filter(p => p.type === 'driver_payment' && p.status === 'completed')
     .reduce((sum, p) => sum + p.amount, 0);
 
+  const pendingPayments = payments
+    .filter(p => p.status === 'pending')
+    .reduce((sum, p) => sum + p.amount, 0);
+
+  const pendingCount = payments.filter(p => p.status === 'pending').length;
+
   const formatCurrency = (amount: number, currency: string = 'ZMW') => {
     return new Intl.NumberFormat('en-ZM', {
       style: 'currency',
@@ -222,10 +228,10 @@ export const Billing = () => {
               <div className="p-3 bg-warning/10 rounded-lg text-warning">
                 <Clock size={24} />
               </div>
-              <span className="text-xs font-medium text-warning bg-warning/10 px-2 py-1 rounded">5 Pending</span>
+              <span className="text-xs font-medium text-warning bg-warning/10 px-2 py-1 rounded">{pendingCount} Pending</span>
             </div>
             <p className="text-muted-foreground text-sm mb-1">Pending Payments</p>
-            <h3 className="text-2xl font-bold text-foreground">{formatCurrency(5000, 'ZMW')}</h3>
+            <h3 className="text-2xl font-bold text-foreground">{formatCurrency(pendingPayments, 'ZMW')}</h3>
           </div>
         </div>
 
