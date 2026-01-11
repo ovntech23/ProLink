@@ -129,18 +129,47 @@ export const useStore = create<AppState>((set, get) => ({
   // Initialize store with data from API
   init: async () => {
     try {
-      const { data: driversData } = await driverApi.getDrivers();
-      const { data: usersData } = await userApi.getUsers();
-      const { data: shipmentsData } = await shipmentApi.getShipments();
-      const { data: paymentsData } = await paymentApi.getPayments();
-      const { data: messagesData } = await messageApi.getMessages();
+      // Fetch data with individual error handling
+      let drivers = [];
+      let users = [];
+      let shipments = [];
+      let payments = [];
+      let messages = [];
 
-      // Map _id to id for all data
-      const drivers = driversData.map((d: any) => ({ ...d, id: d._id }));
-      const users = usersData.map((u: any) => ({ ...u, id: u._id }));
-      const shipments = shipmentsData.map((s: any) => ({ ...s, id: s._id }));
-      const payments = paymentsData.map((p: any) => ({ ...p, id: p._id }));
-      const messages = messagesData.map((m: any) => ({ ...m, id: m._id }));
+      try {
+        const { data: driversData } = await driverApi.getDrivers();
+        drivers = driversData.map((d: any) => ({ ...d, id: d._id }));
+      } catch (error) {
+        console.warn('Failed to fetch drivers:', error);
+      }
+
+      try {
+        const { data: usersData } = await userApi.getUsers();
+        users = usersData.map((u: any) => ({ ...u, id: u._id }));
+      } catch (error) {
+        console.warn('Failed to fetch users:', error);
+      }
+
+      try {
+        const { data: shipmentsData } = await shipmentApi.getShipments();
+        shipments = shipmentsData.map((s: any) => ({ ...s, id: s._id }));
+      } catch (error) {
+        console.warn('Failed to fetch shipments:', error);
+      }
+
+      try {
+        const { data: paymentsData } = await paymentApi.getPayments();
+        payments = paymentsData.map((p: any) => ({ ...p, id: p._id }));
+      } catch (error) {
+        console.warn('Failed to fetch payments:', error);
+      }
+
+      try {
+        const { data: messagesData } = await messageApi.getMessages();
+        messages = messagesData.map((m: any) => ({ ...m, id: m._id }));
+      } catch (error) {
+        console.warn('Failed to fetch messages:', error);
+      }
 
       set({ drivers, users, shipments, payments, messages });
     } catch (error) {
