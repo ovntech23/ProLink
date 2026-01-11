@@ -52,19 +52,19 @@ async function fetchApi<T>(
   options: RequestInit = {}
 ): Promise<ApiResponse<T>> {
   const url = `${API_BASE_URL}${endpoint}`;
-  
+
   // Get token and add to headers if available
   const token = getToken();
   const headers: HeadersInit = {
     'Content-Type': 'application/json',
     ...options.headers,
   };
-  
+
   // Add authorization header if token exists
   if (token) {
     (headers as Record<string, string>)['Authorization'] = `Bearer ${token}`;
   }
-  
+
   const config: RequestInit = {
     headers,
     ...options,
@@ -88,7 +88,7 @@ async function fetchApi<T>(
 export const authApi = {
   login: async (credentials: { email: string; password: string }) => {
     console.log('🔍 Frontend login request:', credentials);
-    const result = await fetchApi<{ token: string; user: any }>('/api/users/login', {
+    const result = await fetchApi<{ _id: string; name: string; email: string; role: string; token: string }>('/api/users/login', {
       method: 'POST',
       body: JSON.stringify(credentials),
     });
