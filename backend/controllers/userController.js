@@ -81,13 +81,32 @@ const getUserById = async (req, res) => {
 const loginUser = async (req, res) => {
   try {
     const { email, password } = req.body;
+    console.log('🔍 Login attempt:', { email, passwordLength: password.length });
 
     // Find user by email
     const user = await User.findOne({ email }).select('+password');
+    console.log('🔍 User found:', user ? 'YES' : 'NO');
 
-    if (user && (await bcrypt.compare(password, user.password))) {
+    if (!user) {
+      console.log('❌ User not found for email:', email);
+      return res.status(401).json({ message: 'Invalid email or password' });
+    }
+
+    console.log('🔍 User details:', {
+      id: user._id,
+      email: user.email,
+      role: user.role,
+      hasPassword: !!user.password
+    });
+
+    // Check password
+    const isMatch = await bcrypt.compare(password, user.password);
+    console.log('🔍 Password match:', isMatch);
+
+    if (user && isMatch) {
       // Generate token
       const token = generateToken(user._id);
+      console.log('✅ Login successful for user:', user.email);
 
       res.json({
         _id: user._id,
@@ -97,10 +116,11 @@ const loginUser = async (req, res) => {
         token
       });
     } else {
+      console.log('❌ Invalid credentials for user:', user.email);
       res.status(401).json({ message: 'Invalid email or password' });
     }
   } catch (error) {
-    console.error(error);
+    console.error('❌ Login error:', error);
     res.status(500).json({ message: 'Server error' });
   }
 };

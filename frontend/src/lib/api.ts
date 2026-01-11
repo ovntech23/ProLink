@@ -87,10 +87,13 @@ async function fetchApi<T>(
 // Auth API
 export const authApi = {
   login: async (credentials: { email: string; password: string }) => {
-    return fetchApi<{ token: string; user: any }>('/api/users/login', {
+    console.log('🔍 Frontend login request:', credentials);
+    const result = await fetchApi<{ token: string; user: any }>('/api/users/login', {
       method: 'POST',
       body: JSON.stringify(credentials),
     });
+    console.log('🔍 Frontend login response:', result);
+    return result;
   },
   register: async (userData: { name: string; email: string; password: string; role: string }) => {
     return fetchApi<{ _id: string; name: string; email: string; role: string; message: string }>('/api/users/register', {
