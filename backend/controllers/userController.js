@@ -75,6 +75,24 @@ const getUserById = async (req, res) => {
   }
 };
 
+// @desc    Get current user profile
+// @route   GET /api/users/me
+// @access  Private
+const getCurrentUser = async (req, res) => {
+  try {
+    const user = await User.findById(req.user.id).select('-password');
+
+    if (user) {
+      res.json(user);
+    } else {
+      res.status(404).json({ message: 'User not found' });
+    }
+  } catch (error) {
+    console.error(error);
+    res.status(500).json({ message: 'Server error' });
+  }
+};
+
 // @desc    Create user (Admin)
 // @route   POST /api/users
 // @access  Private/Admin
@@ -237,6 +255,7 @@ module.exports = {
   loginUser,
   getUsers,
   getUserById,
+  getCurrentUser,
   createUser,
   updateUser,
   deleteUser

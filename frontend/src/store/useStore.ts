@@ -129,11 +129,18 @@ export const useStore = create<AppState>((set, get) => ({
   // Initialize store with data from API
   init: async () => {
     try {
-      const { data: drivers } = await driverApi.getDrivers();
-      const { data: users } = await userApi.getUsers();
-      const { data: shipments } = await shipmentApi.getShipments();
-      const { data: payments } = await paymentApi.getPayments();
-      const { data: messages } = await messageApi.getMessages();
+      const { data: driversData } = await driverApi.getDrivers();
+      const { data: usersData } = await userApi.getUsers();
+      const { data: shipmentsData } = await shipmentApi.getShipments();
+      const { data: paymentsData } = await paymentApi.getPayments();
+      const { data: messagesData } = await messageApi.getMessages();
+
+      // Map _id to id for all data
+      const drivers = driversData.map((d: any) => ({ ...d, id: d._id }));
+      const users = usersData.map((u: any) => ({ ...u, id: u._id }));
+      const shipments = shipmentsData.map((s: any) => ({ ...s, id: s._id }));
+      const payments = paymentsData.map((p: any) => ({ ...p, id: p._id }));
+      const messages = messagesData.map((m: any) => ({ ...m, id: m._id }));
 
       set({ drivers, users, shipments, payments, messages });
     } catch (error) {
