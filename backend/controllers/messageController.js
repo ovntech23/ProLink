@@ -3,10 +3,9 @@ const Conversation = require('../models/Conversation');
 const User = require('../models/User');
 const { cacheMessage, invalidateConversationCache } = require('../utils/redisCache');
 
-
-// @desc    Send a new message
-// @route   POST /api/messages
-// @access  Private
+// @desc Send a new message
+// @route POST /api/messages
+// @access Private
 const sendMessage = async (req, res) => {
   try {
     const { conversationId, recipientId, content, attachments } = req.body;
@@ -19,14 +18,9 @@ const sendMessage = async (req, res) => {
     }
 
     let conversation;
-
     if (conversationId) {
       // Use existing conversation
-      conversation = await Conversation.findOne({
-        _id: conversationId,
-        participants: req.user.id
-      });
-
+      conversation = await Conversation.findOne({ _id: conversationId, participants: req.user.id });
       if (!conversation) {
         return res.status(404).json({ message: 'Conversation not found' });
       }
@@ -38,10 +32,7 @@ const sendMessage = async (req, res) => {
       }
 
       // Check if conversation already exists between these users
-      conversation = await Conversation.findOne({
-        participants: { $all: [req.user.id, recipientId] }
-      });
-
+      conversation = await Conversation.findOne({ participants: { $all: [req.user.id, recipientId] } });
       if (!conversation) {
         // Create new conversation
         conversation = new Conversation({
@@ -86,28 +77,18 @@ const sendMessage = async (req, res) => {
       read: savedMessage.read
     };
 
-    // Emit to sender for confirmation
-    // Note: In a real implementation, you would need to track socket IDs for users
-    // This is a simplified version for demonstration
-    // Assuming 'socket' is available or passed, for this example, we'll use 'io' to emit globally or to specific rooms if tracked.
-    // For a specific sender, you'd need their socket ID. This example uses a placeholder `socket.emit` as per instruction.
-    // If `socket` is not defined, this line will cause an error. It should be `io.to(senderSocketId).emit(...)` or similar.
-    // For the purpose of this edit, I'll assume `socket` is meant to be a placeholder for the sender's socket.
-    // If `socket` is not defined in the scope, this line will cause a runtime error.
-    // The instruction provided `socket.emit('messageSent', messageDataToEmit);` but `messageDataToEmit` was not defined.
-    // I will use `messageData` which was defined just above.
-    // Also, `senderId` and `recipientId` are needed for cache invalidation.
-    const senderId = req.user.id.toString();
-    const actualRecipientId = recipientId || conversation.participants.find(p => p.toString() !== req.user.id).toString();
+    // Emit message to sender for confirmation
+    io.emit('messageSent', messageData);
 
-    // Placeholder for socket emit, assuming `socket` is available and `messageDataToEmit` refers to `messageData`
-    // If `socket` is not defined, this line will cause an error.
-    // socket.emit('messageSent', messageData); // Commenting out as `socket` is not defined in this scope
+    // Emit message to recipient if they're online
+    io.emit('receiveMessage', messageData);
 
     // Cache the message in Redis
     await cacheMessage(savedMessage._id.toString(), messageData);
 
     // Invalidate conversation cache for both users
+    const senderId = req.user.id.toString();
+    const actualRecipientId = recipientId || conversation.participants.find(p => p.toString() !== req.user.id).toString();
     await invalidateConversationCache(senderId);
     await invalidateConversationCache(actualRecipientId);
 
@@ -118,9 +99,9 @@ const sendMessage = async (req, res) => {
   }
 };
 
-// @desc    Get all messages for a user
-// @route   GET /api/messages
-// @access  Private
+// @desc Get all messages for a user
+// @route GET /api/messages
+// @access Private
 const getMessages = async (req, res) => {
   try {
     const messages = await Message.find({
@@ -141,17 +122,13 @@ const getMessages = async (req, res) => {
   }
 };
 
-// @desc    Mark a message as read
-// @route   PUT /api/messages/:id/read
-// @access  Private
+// @desc Mark a message as read
+// @route PUT /api/messages/:id/read
+// @access Private
 const markAsRead = async (req, res) => {
   try {
     const { id: messageId } = req.params;
-
-    const message = await Message.findOne({
-      _id: messageId,
-      recipient: req.user.id
-    });
+    const message = await Message.findOne({ _id: messageId, recipient: req.user.id });
 
     if (!message) {
       return res.status(404).json({ message: 'Message not found' });

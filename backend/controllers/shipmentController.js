@@ -1,5 +1,14 @@
 const Shipment = require('../models/Shipment');
 
+// Import io instance for WebSocket events
+let io;
+try {
+  const serverModule = require('../server');
+  io = serverModule.io;
+} catch (error) {
+  console.warn('Could not import io from server module:', error.message);
+}
+
 // @desc    Get all shipments
 // @route   GET /api/shipments
 // @access  Private
@@ -56,6 +65,19 @@ const updateShipment = async (req, res) => {
         );
 
         if (shipment) {
+            // Emit WebSocket event for real-time updates
+            if (io) {
+                io.emit('shipmentUpdate', {
+                    id: shipment._id,
+                    status: shipment.status,
+                    driverId: shipment.driverId,
+                    origin: shipment.origin,
+                    destination: shipment.destination,
+                    pickupDate: shipment.pickupDate,
+                    updatedAt: shipment.updatedAt
+                });
+            }
+
             res.json(shipment);
         } else {
             res.status(404).json({ message: 'Shipment not found' });

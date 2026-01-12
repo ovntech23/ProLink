@@ -4,12 +4,18 @@ import { useNavigate } from 'react-router-dom';
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
+import { useEffect } from 'react';
 import fleetImage from '../../assets/fleet-delivery-trucks.png';
 
 export const MyShipments = () => {
-  const { shipments, currentUser } = useStore();
+  const { shipments, currentUser, initRealTimeUpdates } = useStore();
   const navigate = useNavigate();
   const myShipments = shipments.filter(s => s.ownerId === currentUser?.id);
+
+  // Initialize real-time updates when component mounts
+  useEffect(() => {
+    initRealTimeUpdates();
+  }, [initRealTimeUpdates]);
 
   return (
     <div className="relative min-h-screen">

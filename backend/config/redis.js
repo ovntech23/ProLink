@@ -1,19 +1,26 @@
 const Redis = require('ioredis');
 
-// Redis client configuration
-const redisClient = new Redis(process.env.REDIS_URL || 'redis://localhost:6379', {
-    retryStrategy: (times) => {
-        const delay = Math.min(times * 50, 2000);
-        return delay;
-    },
-    maxRetriesPerRequest: 3,
-    enableReadyCheck: true,
-    lazyConnect: false
-});
+// Redis client configuration using environment variables
+const redisOptions = {
+  host: process.env.REDIS_HOST || 'localhost',
+  port: process.env.REDIS_PORT || 6379,
+  password: process.env.REDIS_PASSWORD || undefined,
+  // Add REDIS_URL support if available
+  ...(process.env.REDIS_URL && { url: process.env.REDIS_URL }),
+  retryStrategy: (times) => {
+    const delay = Math.min(times * 50, 2000);
+    return delay;
+  },
+  maxRetriesPerRequest: 3,
+  enableReadyCheck: true,
+  lazyConnect: false
+};
+
+const redisClient = new Redis(redisOptions);
 
 // Redis pub/sub clients (separate connections for pub/sub)
-const redisPub = new Redis(process.env.REDIS_URL || 'redis://localhost:6379');
-const redisSub = new Redis(process.env.REDIS_URL || 'redis://localhost:6379');
+const redisPub = new Redis(redisOptions);
+const redisSub = new Redis(redisOptions);
 
 // Error handling
 redisClient.on('error', (err) => {

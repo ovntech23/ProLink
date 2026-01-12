@@ -1,6 +1,6 @@
 import { create } from 'zustand';
 import { driverApi, authApi, userApi, shipmentApi, paymentApi, messageApi } from '../lib/api';
-import { initSocket, sendSocketMessage, onMessageReceived, onOnlineUsersUpdate, disconnectSocket } from '../lib/socket';
+import { initSocket, sendSocketMessage, onMessageReceived, onOnlineUsersUpdate, disconnectSocket, getSocket } from '../lib/socket';
 
 export type UserRole = 'broker' | 'driver' | 'owner';
 
@@ -117,6 +117,10 @@ interface AppState {
   getConversations: (userId: string) => { user: User; lastMessage: Message; unreadCount: number }[];
   checkAuth: () => Promise<void>;
   init: () => Promise<void>;
+  initRealTimeUpdates: () => void;
+  broadcastShipmentUpdate: (shipmentId: string, updates: Partial<Shipment>) => void;
+  broadcastDriverUpdate: (driverId: string, updates: Partial<DriverProfile>) => void;
+  broadcastUserUpdate: (userId: string, updates: Partial<User>) => void;
 }
 
 export const useStore = create<AppState>((set, get) => ({
@@ -346,13 +350,18 @@ export const useStore = create<AppState>((set, get) => ({
         });
       }
 
-      return { drivers: newDrivers, users: newUsers, shipments: newShipments };
+      const result = { drivers: newDrivers, users: newUsers, shipments: newShipments };
+      
+      // Broadcast the update to other clients
+      get().broadcastDriverUpdate(driverId, updates);
+
+      return result;
     });
   },
 
   updateShipmentStatus: (shipmentId, status, note) => {
-    set(state => ({
-      shipments: state.shipments.map(s =>
+    set(state => {
+      const updatedShipments = state.shipments.map(s =>
         s.id === shipmentId
           ? {
             ...s,
@@ -363,8 +372,19 @@ export const useStore = create<AppState>((set, get) => ({
             ]
           }
           : s
-      )
-    }));
+      );
+
+      // Broadcast the update to other clients
+      get().broadcastShipmentUpdate(shipmentId, {
+        status,
+        statusHistory: [
+          ...state.shipments.find((s: Shipment) => s.id === shipmentId)?.statusHistory || [],
+          { status, timestamp: new Date().toISOString(), note }
+        ]
+      });
+
+      return { shipments: updatedShipments };
+    });
   },
 
   addPayment: (payment) => {
@@ -581,5 +601,70 @@ export const useStore = create<AppState>((set, get) => ({
     return conversations.sort((a, b) =>
       new Date(b.lastMessage.timestamp).getTime() - new Date(a.lastMessage.timestamp).getTime()
     );
+  },
+
+  // Initialize real-time WebSocket event handlers
+  initRealTimeUpdates: () => {
+    const socket = getSocket();
+    if (!socket) return;
+
+    // Subscribe to update channels
+    socket.emit('subscribeToUpdates', {
+      updateTypes: ['shipment', 'driver', 'user']
+    });
+
+    // Listen for shipment updates
+    socket.on('shipmentUpdate', (shipmentData: Partial<Shipment>) => {
+      set(state => ({
+        shipments: state.shipments.map(s =>
+          s.id === shipmentData.id ? { ...s, ...shipmentData } : s
+        )
+      }));
+    });
+
+    // Listen for driver updates
+    socket.on('driverUpdate', (driverData: Partial<DriverProfile>) => {
+      set(state => ({
+        drivers: state.drivers.map(d =>
+          d.id === driverData.id ? { ...d, ...driverData } : d
+        ),
+        users: state.users.map(u =>
+          u.id === driverData.id ? { ...u, ...driverData } : u
+        )
+      }));
+    });
+
+    // Listen for user updates
+    socket.on('userUpdate', (userData: Partial<User>) => {
+      set(state => ({
+        users: state.users.map(u =>
+          u.id === userData.id ? { ...u, ...userData } : u
+        )
+      }));
+    });
+  },
+
+  // Broadcast shipment updates to other clients
+  broadcastShipmentUpdate: (shipmentId, updates) => {
+    const socket = getSocket();
+    if (socket) {
+      socket.emit('shipmentUpdated', { id: shipmentId, ...updates });
+    }
+  },
+
+  // Broadcast driver updates to other clients
+  broadcastDriverUpdate: (driverId, updates) => {
+    const socket = getSocket();
+    if (socket) {
+      socket.emit('driverUpdated', { id: driverId, ...updates });
+    }
+  },
+
+  // Broadcast user updates to other clients
+  broadcastUserUpdate: (userId, updates) => {
+    const socket = getSocket();
+    if (socket) {
+      socket.emit('userUpdated', { id: userId, ...updates });
+    }
   }
 }));

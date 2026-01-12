@@ -100,6 +100,35 @@ io.on('connection', (socket) => {
     }
   });
 
+  // Handle subscription to real-time updates
+  socket.on('subscribeToUpdates', (data) => {
+    const { updateTypes } = data;
+    if (updateTypes && Array.isArray(updateTypes)) {
+      updateTypes.forEach(type => {
+        socket.join(`${type}_updates`);
+        console.log(`User ${socket.user?.userId} subscribed to ${type}_updates`);
+      });
+    }
+  });
+
+  // Handle shipment updates
+  socket.on('shipmentUpdated', (shipmentData) => {
+    console.log('Shipment update broadcast:', shipmentData);
+    io.to('shipment_updates').emit('shipmentUpdate', shipmentData);
+  });
+
+  // Handle driver updates
+  socket.on('driverUpdated', (driverData) => {
+    console.log('Driver update broadcast:', driverData);
+    io.to('driver_updates').emit('driverUpdate', driverData);
+  });
+
+  // Handle user updates
+  socket.on('userUpdated', (userData) => {
+    console.log('User update broadcast:', userData);
+    io.to('user_updates').emit('userUpdate', userData);
+  });
+
   // Handle sending a message
   socket.on('sendMessage', async (messageData) => {
     try {

@@ -2,6 +2,15 @@ const User = require('../models/User');
 const bcrypt = require('bcryptjs');
 const { generateToken } = require('../middleware/auth');
 
+// Import io instance for WebSocket events
+let io;
+try {
+  const serverModule = require('../server');
+  io = serverModule.io;
+} catch (error) {
+  console.warn('Could not import io from server module:', error.message);
+}
+
 // @desc    Register a new user
 // @route   POST /api/users/register
 // @access  Public
@@ -162,6 +171,19 @@ const updateUser = async (req, res) => {
       }
 
       const updatedUser = await user.save();
+
+      // Emit WebSocket event for real-time updates
+      if (io) {
+        io.emit('userUpdate', {
+          id: updatedUser._id,
+          name: updatedUser.name,
+          email: updatedUser.email,
+          role: updatedUser.role,
+          isApproved: updatedUser.isApproved,
+          phone: updatedUser.phone,
+          updatedAt: updatedUser.updatedAt
+        });
+      }
 
       res.json({
         _id: updatedUser._id,

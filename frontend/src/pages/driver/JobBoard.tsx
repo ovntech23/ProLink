@@ -2,13 +2,18 @@ import { Truck, CheckCircle, AlertTriangle, Send, X } from 'lucide-react';
 import type { Shipment } from '../../store/useStore';
 import { useStore } from '../../store/useStore';
 import { Button } from "@/components/ui/button";
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import fleetImage from '../../assets/fleet-delivery-trucks.png';
 
 export const JobBoard = () => {
-  const { shipments, currentUser, updateShipmentStatus, reportShipmentIncident } = useStore();
+  const { shipments, currentUser, updateShipmentStatus, reportShipmentIncident, initRealTimeUpdates } = useStore();
   const [reportingIncidentId, setReportingIncidentId] = useState<string | null>(null);
   const [incidentNote, setIncidentNote] = useState('');
+
+  // Initialize real-time updates when component mounts
+  useEffect(() => {
+    initRealTimeUpdates();
+  }, [initRealTimeUpdates]);
 
   // Filter for shipments assigned to this driver
   const myJobs = shipments.filter(s => s.driverId === currentUser?.id);

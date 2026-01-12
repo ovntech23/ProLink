@@ -1,5 +1,6 @@
 import { Package, Truck, CheckCircle, Clock } from 'lucide-react';
 import { useStore } from '../../store/useStore';
+import { useEffect } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from "../../components/ui/card";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "../../components/ui/table";
 import { Badge } from "../../components/ui/badge";
@@ -27,11 +28,16 @@ const StatCard = ({ title, value, icon: Icon, color }: StatCardProps) => (
 );
 
 export const BrokerDashboard = () => {
-  const { shipments, drivers } = useStore();
+  const { shipments, drivers, initRealTimeUpdates } = useStore();
   const totalShipments = shipments.length;
   const activeShipments = shipments.filter(s => ['pending', 'assigned', 'picked_up', 'in_transit'].includes(s.status)).length;
   const completedShipments = shipments.filter(s => s.status === 'delivered').length;
   const availableDrivers = drivers.filter(d => d.status === 'available').length;
+
+  // Initialize real-time updates when component mounts
+  useEffect(() => {
+    initRealTimeUpdates();
+  }, [initRealTimeUpdates]);
 
   return (
     <div className="relative min-h-screen">

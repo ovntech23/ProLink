@@ -1,5 +1,14 @@
 const User = require('../models/User');
 
+// Import io instance for WebSocket events
+let io;
+try {
+  const serverModule = require('../server');
+  io = serverModule.io;
+} catch (error) {
+  console.warn('Could not import io from server module:', error.message);
+}
+
 // @desc Get all drivers
 // @route GET /api/drivers
 // @access Public
@@ -62,6 +71,23 @@ const updateDriverProfile = async (req, res) => {
     driver.phone = phone || driver.phone;
 
     const updatedDriver = await driver.save();
+
+    // Emit WebSocket event for real-time updates
+    if (io) {
+      io.emit('driverUpdate', {
+        id: updatedDriver._id,
+        status: updatedDriver.status,
+        vehicleType: updatedDriver.vehicleType,
+        vehiclePlate: updatedDriver.vehiclePlate,
+        vehicleModel: updatedDriver.vehicleModel,
+        vehicleCategory: updatedDriver.vehicleCategory,
+        trailerPlate: updatedDriver.trailerPlate,
+        currentLocation: updatedDriver.currentLocation,
+        phone: updatedDriver.phone,
+        updatedAt: updatedDriver.updatedAt
+      });
+    }
+
     res.json(updatedDriver);
   } catch (error) {
     console.error(error);
