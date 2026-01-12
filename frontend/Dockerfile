@@ -11,10 +11,16 @@ WORKDIR /app
 COPY package*.json ./
 
 # Install dependencies
-RUN npm ci --only=production
+RUN npm ci
 
 # Copy source code
 COPY . .
+
+# Build the application
+RUN npm run build
+
+# Install a simple web server to serve the static files
+RUN npm install -g serve
 
 # Create non-root user for security
 RUN addgroup -g 1001 -S nodejs
@@ -26,11 +32,11 @@ RUN chown -R nextjs:nodejs /app
 USER nextjs
 
 # Expose port
-EXPOSE 5000
+EXPOSE 3000
 
 # Add health check
 HEALTHCHECK --interval=30s --timeout=10s --start-period=10s --retries=3 \
-  CMD curl -f http://localhost:5000/health || exit 1
+  CMD curl -f http://localhost:3000/ || exit 1
 
-# Start the application
-CMD ["npm", "start"]
+# Serve the built application
+CMD ["serve", "-s", "dist", "-l", "3000"]
