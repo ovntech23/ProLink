@@ -78,9 +78,6 @@ const sendMessage = async (req, res) => {
     };
 
     // Emit message to sender for confirmation
-    // Use dynamic import to avoid circular dependency
-    const { io } = require('../server');
-    
     // Emit to sender's socket
     io.emit('messageSent', messageData);
 
