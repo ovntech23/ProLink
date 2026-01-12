@@ -11,9 +11,9 @@ import { Button } from '../components/ui/button';
 import { Avatar, AvatarFallback } from '../components/ui/avatar';
 
 export const MessagesPage = () => {
-  const { currentUser, users, onlineUsers, getConversations, getMessagesBetweenUsers, markMessageAsRead, sendMessage } = useStore();
+  const { currentUser, users, onlineUsers, getConversations, getMessagesBetweenUsers, markMessageAsRead, sendMessage, messages } = useStore();
   const [selectedUser, setSelectedUser] = useState<User | null>(null);
-  const [messages, setMessages] = useState<any[]>([]);
+  const [localMessages, setLocalMessages] = useState<any[]>([]);
   const [conversations, setConversations] = useState<any[]>([]);
   const [isNewMessageOpen, setIsNewMessageOpen] = useState(false);
   const isMobile = useIsMobile();
@@ -28,7 +28,7 @@ export const MessagesPage = () => {
       // If there's a selected user, update messages
       if (selectedUser) {
         const userMessages = getMessagesBetweenUsers(currentUser.id, selectedUser.id);
-        setMessages(userMessages);
+        setLocalMessages(userMessages);
 
         // Mark messages as read
         userMessages
@@ -45,20 +45,19 @@ export const MessagesPage = () => {
     // will be updated in real-time
     if (currentUser && selectedUser) {
       const userMessages = getMessagesBetweenUsers(currentUser.id, selectedUser.id);
-      setMessages(userMessages);
+      setLocalMessages(userMessages);
 
       // Update conversations as well since last message might have changed
       const userConversations = getConversations(currentUser.id);
       setConversations(userConversations);
     }
-  }, [currentUser, selectedUser, getMessagesBetweenUsers, getConversations]);
+  }, [currentUser, selectedUser, getMessagesBetweenUsers, getConversations, messages]);
 
   const handleSelectUser = (user: User) => {
     setSelectedUser(user);
-
     if (currentUser) {
       const userMessages = getMessagesBetweenUsers(currentUser.id, user.id);
-      setMessages(userMessages);
+      setLocalMessages(userMessages);
 
       // Mark messages as read
       userMessages
@@ -88,8 +87,7 @@ export const MessagesPage = () => {
     // Refresh messages and conversations
     if (currentUser) {
       const userMessages = getMessagesBetweenUsers(currentUser.id, selectedUser.id);
-      setMessages(userMessages);
-
+      setLocalMessages(userMessages);
       const updatedConversations = getConversations(currentUser.id);
       setConversations(updatedConversations);
     }
@@ -114,12 +112,8 @@ export const MessagesPage = () => {
             </div>
           </div>
           <div className="flex-1 overflow-y-auto p-4 space-y-4">
-            {messages.map((message) => (
-              <MessageBubble
-                key={message.id}
-                message={message}
-                isCurrentUser={message.senderId === currentUser.id}
-              />
+            {localMessages.map((message) => (
+              <MessageBubble key={message.id} message={message} isCurrentUser={message.senderId === currentUser.id} />
             ))}
           </div>
           <div className="p-4 border-t border-border">
@@ -146,11 +140,7 @@ export const MessagesPage = () => {
                   </DialogHeader>
                   <div className="max-h-96 overflow-y-auto">
                     {availableUsers.map((user) => (
-                      <div
-                        key={user.id}
-                        className="p-3 hover:bg-muted cursor-pointer rounded-lg transition-colors"
-                        onClick={() => handleSelectNewUser(user)}
-                      >
+                      <div key={user.id} className="p-3 hover:bg-muted cursor-pointer rounded-lg transition-colors" onClick={() => handleSelectNewUser(user)} >
                         <div className="flex items-center gap-3">
                           <Avatar>
                             <AvatarFallback className="bg-[#ba0b0b] text-white">
@@ -169,12 +159,7 @@ export const MessagesPage = () => {
               </Dialog>
             </div>
           </div>
-          <ConversationList
-            conversations={conversations}
-            onSelectUser={handleSelectUser}
-            currentUser={currentUser}
-            onlineUsers={onlineUsers}
-          />
+          <ConversationList conversations={conversations} onSelectUser={handleSelectUser} currentUser={currentUser} onlineUsers={onlineUsers} />
         </div>
       );
     }
@@ -199,11 +184,7 @@ export const MessagesPage = () => {
                   </DialogHeader>
                   <div className="max-h-96 overflow-y-auto">
                     {availableUsers.map((user) => (
-                      <div
-                        key={user.id}
-                        className="p-3 hover:bg-muted cursor-pointer rounded-lg transition-colors"
-                        onClick={() => handleSelectNewUser(user)}
-                      >
+                      <div key={user.id} className="p-3 hover:bg-muted cursor-pointer rounded-lg transition-colors" onClick={() => handleSelectNewUser(user)} >
                         <div className="flex items-center gap-3">
                           <Avatar>
                             <AvatarFallback className="bg-[#ba0b0b] text-white">
@@ -222,12 +203,7 @@ export const MessagesPage = () => {
               </Dialog>
             </div>
           </div>
-          <ConversationList
-            conversations={conversations}
-            onSelectUser={handleSelectUser}
-            currentUser={currentUser}
-            onlineUsers={onlineUsers}
-          />
+          <ConversationList conversations={conversations} onSelectUser={handleSelectUser} currentUser={currentUser} onlineUsers={onlineUsers} />
         </div>
 
         {/* Message Thread */}
@@ -239,12 +215,8 @@ export const MessagesPage = () => {
                 <p className="text-sm text-muted-foreground capitalize">{selectedUser.role}</p>
               </div>
               <div className="flex-1 overflow-y-auto p-4 space-y-4">
-                {messages.map((message) => (
-                  <MessageBubble
-                    key={message.id}
-                    message={message}
-                    isCurrentUser={message.senderId === currentUser.id}
-                  />
+                {localMessages.map((message) => (
+                  <MessageBubble key={message.id} message={message} isCurrentUser={message.senderId === currentUser.id} />
                 ))}
               </div>
               <div className="p-4 border-t border-border">
