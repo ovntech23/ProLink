@@ -184,9 +184,6 @@ export const Login = () => {
               </Button>
             </form>
             <div className="space-y-4">
-              <div className="text-center text-xs text-muted-foreground p-4 bg-muted/50 rounded-lg">
-                Demo accounts have been removed. Please use the form above to log in with real credentials, or sign up for a new account.
-              </div>
               <Button
                 variant="outline"
                 className="w-full p-4 rounded-xl border border-border hover:border-primary hover:bg-primary/10 transition-all flex items-center gap-4 justify-center"
