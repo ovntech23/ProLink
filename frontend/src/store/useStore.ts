@@ -219,6 +219,14 @@ export const useStore = create<AppState>((set, get) => ({
         }));
       });
 
+      // Setup online users listener
+      onOnlineUsersUpdate((userIds) => {
+        set({ onlineUsers: userIds });
+      });
+
+      // Initialize real-time updates
+      get().initRealTimeUpdates();
+
       // Initialize store data
       await get().init();
 
@@ -264,6 +272,9 @@ export const useStore = create<AppState>((set, get) => ({
       onOnlineUsersUpdate((userIds) => {
         set({ onlineUsers: userIds });
       });
+
+      // Initialize real-time updates
+      get().initRealTimeUpdates();
 
       // Fetch initial data
       await get().init();

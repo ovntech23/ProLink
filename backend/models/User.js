@@ -25,11 +25,11 @@ const userSchema = new mongoose.Schema({
     enum: ['driver', 'owner', 'broker', 'admin'],
     default: 'owner'
   },
-  // Driver-specific fields
+  // Driver-specific fields (only applicable to driver role)
   status: {
     type: String,
-    enum: ['available', 'busy', 'offline'],
-    default: 'offline'
+    enum: ['available', 'busy', 'offline']
+    // No default - will be undefined for non-drivers
   },
   vehicleType: {
     type: String

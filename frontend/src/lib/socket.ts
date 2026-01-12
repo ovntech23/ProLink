@@ -20,6 +20,10 @@ export const initSocket = (token: string) => {
     // Handle connection events
     socket.on('connect', () => {
       console.log('Connected to WebSocket server');
+      // Emit join event to register user as online
+      if (socket) {
+        socket.emit('join');
+      }
     });
 
     socket.on('disconnect', () => {

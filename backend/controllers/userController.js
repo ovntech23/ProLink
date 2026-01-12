@@ -123,14 +123,21 @@ const createUser = async (req, res) => {
     // Hash password not needed here because User model pre-save hook handles it
     // But we need to make sure we pass the plain password to the model
 
-    const user = await User.create({
+    const userData = {
       name,
       email,
       password, // Pre-save hook will hash this
       role,
       phone,
       isApproved: true // Admin created users are auto-approved
-    });
+    };
+
+    // Set default status for drivers
+    if (role === 'driver') {
+      userData.status = 'available';
+    }
+
+    const user = await User.create(userData);
 
     if (user) {
       res.status(201).json({
