@@ -77,6 +77,16 @@ const sendMessage = async (req, res) => {
       read: savedMessage.read
     };
 
+    // Emit message to sender for confirmation
+    // Use dynamic import to avoid circular dependency
+    const { io } = require('../server');
+    
+    // Emit to sender's socket
+    io.emit('messageSent', messageData);
+
+    // Emit message to recipient if they're online
+    io.emit('receiveMessage', messageData);
+
     // Cache the message in Redis
     await cacheMessage(savedMessage._id.toString(), messageData);
 
