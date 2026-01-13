@@ -274,6 +274,12 @@ export const paymentApi = {
       body: JSON.stringify({ status }),
     });
   },
+  createPayment: async (paymentData: any) => {
+    return fetchApi<any>('/api/payments', {
+      method: 'POST',
+      body: JSON.stringify(paymentData),
+    });
+  },
 };
 
 // Message API

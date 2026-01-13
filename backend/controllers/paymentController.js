@@ -53,8 +53,56 @@ const updatePaymentStatus = async (req, res) => {
     }
 };
 
+// @desc    Create a new payment
+// @route   POST /api/payments
+// @access  Private
+const createPayment = async (req, res) => {
+    try {
+        const {
+            shipmentId,
+            amount,
+            currency,
+            status,
+            payer,
+            payee,
+            type
+        } = req.body;
+
+        const payment = new Payment({
+            shipmentId,
+            amount,
+            currency,
+            status: status || 'pending',
+            payer,
+            payee,
+            type
+        });
+
+        const createdPayment = await payment.save();
+
+        // Get socket.io instance
+        const io = req.app.get('io');
+
+        // Broadcast to all clients
+        io.emit('paymentCreated', createdPayment);
+
+        // Emit generic update
+        io.emit('data-updated', {
+            type: 'payment',
+            action: 'create',
+            data: createdPayment
+        });
+
+        res.status(201).json(createdPayment);
+    } catch (error) {
+        console.error('Error creating payment:', error);
+        res.status(500).json({ message: 'Server error creating payment' });
+    }
+};
+
 module.exports = {
     getPayments,
     getPaymentById,
-    updatePaymentStatus
+    updatePaymentStatus,
+    createPayment
 };

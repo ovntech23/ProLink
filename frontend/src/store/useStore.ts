@@ -398,12 +398,12 @@ export const useStore = create<AppState>((set, get) => ({
     });
   },
 
-  addPayment: (payment) => {
-    const newPayment: Payment = {
-      ...payment,
-      id: `p${Math.random().toString(36).substr(2, 9)}`
-    };
-    set(state => ({ payments: [newPayment, ...state.payments] }));
+  addPayment: async (payment) => {
+    try {
+      await paymentApi.createPayment(payment);
+    } catch (error) {
+      console.error('Failed to create payment:', error);
+    }
   },
 
   updatePaymentStatus: (paymentId, status) => {
@@ -696,6 +696,23 @@ export const useStore = create<AppState>((set, get) => ({
           }
 
           return { users: newUsers, drivers: newDrivers };
+        });
+      } else if (type === 'payment') {
+        set(state => {
+          if (action === 'create') {
+            // Check if payment already exists to prevent duplicates
+            if (state.payments.some(p => p.id === data._id || p.id === data.id)) {
+              return {};
+            }
+            return { payments: [{ ...data, id: data._id || data.id }, ...state.payments] };
+          } else if (action === 'update') {
+            return {
+              payments: state.payments.map(p =>
+                p.id === (data._id || data.id) ? { ...p, ...data, id: data._id || data.id } : p
+              )
+            };
+          }
+          return {};
         });
       }
     });
