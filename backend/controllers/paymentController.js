@@ -69,7 +69,7 @@ const createPayment = async (req, res) => {
         } = req.body;
 
         const payment = new Payment({
-            shipmentId,
+            shipmentId: (shipmentId && shipmentId !== 'N/A') ? shipmentId : undefined,
             amount,
             currency,
             status: status || 'pending',
