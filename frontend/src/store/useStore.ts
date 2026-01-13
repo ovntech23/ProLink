@@ -172,7 +172,13 @@ export const useStore = create<AppState>((set, get) => ({
 
       try {
         const { data: messagesData } = await messageApi.getMessages();
-        messages = messagesData.map((m: any) => ({ ...m, id: m._id }));
+        messages = messagesData.map((m: any) => ({
+          ...m,
+          id: m._id || m.id,
+          senderId: m.sender?._id || m.sender?.id || m.sender,
+          recipientId: m.recipient?._id || m.recipient?.id || m.recipient,
+          timestamp: m.createdAt || m.timestamp
+        }));
       } catch (error) {
         console.warn('Failed to fetch messages:', error);
       }
@@ -713,31 +719,44 @@ export const useStore = create<AppState>((set, get) => ({
     });
 
     // Listen for new-message event
-    socket.on('new-message', (message: Message) => {
+    socket.on('new-message', (message: any) => {
       console.log('Received new-message:', message);
+
+      // Ensure we map backend fields if necessary
+      const mappedMessage: Message = {
+        id: message.id || message._id,
+        senderId: message.senderId || (typeof message.sender === 'object' ? message.sender._id : message.sender),
+        recipientId: message.recipientId || (typeof message.recipient === 'object' ? message.recipient._id : message.recipient),
+        content: message.content,
+        timestamp: message.timestamp || message.createdAt,
+        read: message.read,
+        attachments: message.attachments
+      };
 
       // Ignore messages sent by current user to avoid duplication with optimistic updates
       const { currentUser } = get();
-      if (currentUser && message.senderId === currentUser.id) {
+      if (currentUser && mappedMessage.senderId === currentUser.id) {
         return;
       }
 
       set((state) => ({
-        messages: [...state.messages, {
-          id: message.id,
-          senderId: message.senderId,
-          recipientId: message.recipientId,
-          content: message.content,
-          timestamp: message.timestamp,
-          read: message.read,
-          attachments: message.attachments
-        }]
+        messages: [...state.messages, mappedMessage]
+      }));
+    });
+
+    // Listen for message read events
+    socket.on('messageRead', (data: { messageId: string; conversationId: string; readAt: string }) => {
+      console.log('Received messageRead:', data);
+      set(state => ({
+        messages: state.messages.map(m =>
+          (m.id === data.messageId || (m as any)._id === data.messageId) ? { ...m, read: true } : m
+        )
       }));
     });
   },
 
   // Broadcast shipment updates to other clients
-  broadcastShipmentUpdate: (shipmentId, updates) => {
+  broadcastShipmentUpdate: (shipmentId: string, updates: Partial<Shipment>) => {
     const socket = getSocket();
     if (socket) {
       socket.emit('shipmentUpdated', { id: shipmentId, ...updates });
@@ -745,7 +764,7 @@ export const useStore = create<AppState>((set, get) => ({
   },
 
   // Broadcast driver updates to other clients
-  broadcastDriverUpdate: (driverId, updates) => {
+  broadcastDriverUpdate: (driverId: string, updates: Partial<DriverProfile>) => {
     const socket = getSocket();
     if (socket) {
       socket.emit('driverUpdated', { id: driverId, ...updates });
@@ -753,7 +772,7 @@ export const useStore = create<AppState>((set, get) => ({
   },
 
   // Broadcast user updates to other clients
-  broadcastUserUpdate: (userId, updates) => {
+  broadcastUserUpdate: (userId: string, updates: Partial<User>) => {
     const socket = getSocket();
     if (socket) {
       socket.emit('userUpdated', { id: userId, ...updates });
