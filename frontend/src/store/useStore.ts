@@ -531,14 +531,19 @@ export const useStore = create<AppState>((set, get) => ({
     return state.messages.filter(m => m.recipientId === userId && !m.read);
   },
 
-  markMessageAsRead: (messageId) => {
-    set(state => ({
-      messages: state.messages.map(m =>
-        m.id === messageId
-          ? { ...m, read: true }
-          : m
-      )
-    }));
+  markMessageAsRead: async (messageId) => {
+    try {
+      await messageApi.markAsRead(messageId);
+      set(state => ({
+        messages: state.messages.map(m =>
+          m.id === messageId
+            ? { ...m, read: true }
+            : m
+        )
+      }));
+    } catch (error) {
+      console.error('Failed to mark message as read:', error);
+    }
   },
 
   getConversations: (userId) => {
@@ -602,12 +607,23 @@ export const useStore = create<AppState>((set, get) => ({
     socket.off('userUpdate');
     socket.off('data-updated');
     socket.off('new-message');
+    socket.off('messageRead');
 
     // Listen for shipment updates
     socket.on('shipmentUpdate', (shipmentData: Partial<Shipment>) => {
       set(state => ({
         shipments: state.shipments.map(s =>
           s.id === shipmentData.id ? { ...s, ...shipmentData } : s
+        )
+      }));
+    });
+
+    // Listen for message read events
+    socket.on('messageRead', (data: { messageId: string; conversationId: string; readAt: string }) => {
+      console.log('Received messageRead:', data);
+      set(state => ({
+        messages: state.messages.map(m =>
+          m.id === data.messageId ? { ...m, read: true } : m
         )
       }));
     });

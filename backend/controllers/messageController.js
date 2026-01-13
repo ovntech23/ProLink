@@ -148,6 +148,16 @@ const markAsRead = async (req, res) => {
     message.readAt = new Date();
     await message.save();
 
+    // Notify the sender that the message has been read
+    const io = req.app.get('io');
+    if (io) {
+      io.to(message.sender.toString()).emit('messageRead', {
+        messageId: message._id,
+        conversationId: message.conversationId,
+        readAt: message.readAt
+      });
+    }
+
     res.json({ message: 'Message marked as read' });
   } catch (error) {
     console.error(error);

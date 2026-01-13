@@ -223,18 +223,16 @@ export const featuresApi = {
   },
 };
 
-// Messages API
-export const messagesApi = {
-  getMessages: async (): Promise<any[]> => {
-    const response = await fetchApi<any[]>('/api/messages');
-    return response.data;
+// Message API
+export const messageApi = {
+  getMessages: async () => {
+    return fetchApi<any[]>('/api/messages');
   },
-  sendMessage: async (messageData: { recipientId: string; content: string; attachments?: any[] }): Promise<any> => {
-    const response = await fetchApi<any>('/api/messages', {
+  sendMessage: async (messageData: { recipientId: string; content: string; attachments?: any[] }) => {
+    return fetchApi<any>('/api/messages', {
       method: 'POST',
       body: JSON.stringify(messageData),
     });
-    return response.data;
   },
   markAsRead: async (messageId: string): Promise<any> => {
     const response = await fetchApi<any>(`/api/messages/${messageId}/read`, {
@@ -278,19 +276,6 @@ export const paymentApi = {
     return fetchApi<any>('/api/payments', {
       method: 'POST',
       body: JSON.stringify(paymentData),
-    });
-  },
-};
-
-// Message API
-export const messageApi = {
-  getMessages: async () => {
-    return fetchApi<any[]>('/api/messages');
-  },
-  sendMessage: async (messageData: { recipientId: string; content: string; attachments?: any[] }) => {
-    return fetchApi<any>('/api/messages', {
-      method: 'POST',
-      body: JSON.stringify(messageData),
     });
   },
 };
