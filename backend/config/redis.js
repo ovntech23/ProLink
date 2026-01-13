@@ -3,6 +3,7 @@ const Redis = require('ioredis');
 // Redis client configuration using environment variables
 // Redis client configuration using environment variables
 const redisCommonOptions = {
+    password: process.env.REDIS_PASSWORD || undefined,
     retryStrategy: (times) => {
         // In development, if we can't connect quickly, stop retrying to avoid log spam/crashes
         if (process.env.NODE_ENV !== 'production' && times > 3) {
