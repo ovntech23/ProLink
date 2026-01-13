@@ -1,12 +1,8 @@
 const Redis = require('ioredis');
 
 // Redis client configuration using environment variables
-const redisOptions = {
-    host: process.env.REDIS_HOST || 'localhost',
-    port: process.env.REDIS_PORT || 6379,
-    password: process.env.REDIS_PASSWORD || undefined,
-    // Add REDIS_URL support if available
-    ...(process.env.REDIS_URL && { url: process.env.REDIS_URL }),
+// Redis client configuration using environment variables
+const redisCommonOptions = {
     retryStrategy: (times) => {
         // In development, if we can't connect quickly, stop retrying to avoid log spam/crashes
         if (process.env.NODE_ENV !== 'production' && times > 3) {
@@ -29,9 +25,23 @@ let redisClient, redisPub, redisSub;
 // But given the constraints, I'll switch to a specialized Mock class for dev.
 
 if (process.env.NODE_ENV === 'production') {
-    redisClient = new Redis(redisOptions);
-    redisPub = new Redis(redisOptions);
-    redisSub = new Redis(redisOptions);
+    if (process.env.REDIS_URL) {
+        console.log('🔌 Connecting to Redis using REDIS_URL...');
+        redisClient = new Redis(process.env.REDIS_URL, redisCommonOptions);
+        redisPub = new Redis(process.env.REDIS_URL, redisCommonOptions);
+        redisSub = new Redis(process.env.REDIS_URL, redisCommonOptions);
+    } else {
+        console.log('🔌 Connecting to Redis using host/port...');
+        const redisOptions = {
+            host: process.env.REDIS_HOST || 'localhost',
+            port: process.env.REDIS_PORT || 6379,
+            password: process.env.REDIS_PASSWORD || undefined,
+            ...redisCommonOptions
+        };
+        redisClient = new Redis(redisOptions);
+        redisPub = new Redis(redisOptions);
+        redisSub = new Redis(redisOptions);
+    }
 } else {
     console.log('⚠️ Development Mode: Using Mock Redis Client to prevent connection errors.');
 
