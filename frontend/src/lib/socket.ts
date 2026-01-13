@@ -57,7 +57,7 @@ export const sendSocketMessage = (messageData: any) => {
 export const onMessageReceived = (callback: (message: any) => void) => {
   if (socket) {
     socket.on('receiveMessage', callback);
-    socket.on('messageSent', callback);
+    // Removed messageSent listener to prevent duplication with optimistic updates
   }
 };
 
