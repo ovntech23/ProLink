@@ -1,8 +1,28 @@
 import { useState, useRef } from 'react';
 import { Button } from '../ui/button';
 import { Input } from '../ui/input';
-import { Send, Paperclip } from 'lucide-react';
+import { Send, Paperclip, Smile } from 'lucide-react';
+import { Popover, PopoverContent, PopoverTrigger } from '../ui/popover';
 import type { Attachment } from '../../store/useStore';
+
+const EMOJI_CATEGORIES = [
+  {
+    name: 'Smileys',
+    emojis: ['😀', '😃', '😄', '😁', '😅', '😂', '🤣', '😊', '😇', '🙂', '🙃', '😉', '😌', '😍', '🥰', '😘', '😗', '😙', '😚', '😋', '😛', '😝', '😜', '🤪', '🤨', '🧐', '🤓', '😎', '🤩', '🥳', '😏', '😒', '😞', '😔', '😟', '😕', '🙁', '☹️', '😣', '😖', '😫', '😩', '🥺', '😢', '😭', '😤', '😠', '😡', '🤬', '🤯', '😳', '🥵', '🥶', '😱', '😨', '😰', '😥', '😓', '🤗', '🤔', '🤭', '🤫', '🤥', '😶', '😐', '😑', '😬', '🙄', '😯', '😦', '😧', '😮', '😲', '🥱', '😴', '🤤', '😪', '😵', '🤐', '🥴', '🤢', '🤮', '🤧', '😷', '🤒', '🤕']
+  },
+  {
+    name: 'Hands & People',
+    emojis: ['👋', '🤚', '🖐', '✋', '🖖', '👌', '🤏', '✌️', '🤞', '🤟', '🤘', '🤙', '👈', '👉', '👆', '🖕', '👇', '☝️', '👍', '👎', '✊', '👊', '🤛', '🤜', '👏', '🙌', '👐', '🤲', '🤝', '🙏', '✍️', '💅', '🤳', '💪', '🦾']
+  },
+  {
+    name: 'Hearts & Symbols',
+    emojis: ['❤️', '🧡', '💛', '💚', '💙', '💜', '🖤', '🤍', '🤎', '💔', '❣️', '💕', '💞', '💓', '💗', '💖', '💘', '💝', '💟', '☮️', '✝️', '☪️', '🕉', '☸️', '✡️', '🔯', '🕎', '☯️', '☦️', '🛐', '⛎', '♈️', '♉️', '♊️', '♋️', '♌️', '♍️', '♎️', '♏️', '♐️', '♑️', '♒️', '♓️', '🆔', '⚛️', '🉑', '☢️', '☣️', '📴', '📳', '🈶', '🈚️', '🈸', '🈺', '🈷️', '✴️', '🆚', '💮', '🉐', '㊙️', '㊗️', '🈴', '🈵', '🈹', '🈲', '🅰️', '🅱️', '🆓', '🆔', '🅾️', '🆗', '🅿️', '🆖', '🆙', '🆓', '🆕', '🆒', '🆓', '🆎', '🆑', '🆘', '📍', '🚩']
+  },
+  {
+    name: 'Transport & Logistics',
+    emojis: ['🚚', '🚛', '📦', '🏗️', '⛽', '🛣️', '🏢', '🏗️', '🗺️', '🚢', '✈️', '🚂', '🚲', '🚜', '🛠️', '🧰', '🔧', '🧱', '🏗️', '🚦', '⚓', '⛽', '🚨']
+  },
+];
 
 interface MessageInputProps {
   onSend: (content: string, attachments?: Attachment[]) => void;
@@ -12,6 +32,7 @@ export const MessageInput = ({ onSend }: MessageInputProps) => {
   const [message, setMessage] = useState('');
   const [attachments, setAttachments] = useState<Attachment[]>([]);
   const fileInputRef = useRef<HTMLInputElement>(null);
+  const inputRef = useRef<HTMLInputElement>(null);
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
@@ -22,11 +43,32 @@ export const MessageInput = ({ onSend }: MessageInputProps) => {
     }
   };
 
+  const addEmoji = (emoji: string) => {
+    const input = inputRef.current;
+    if (!input) {
+      setMessage(prev => prev + emoji);
+      return;
+    }
+
+    const start = input.selectionStart || 0;
+    const end = input.selectionEnd || 0;
+    const newMessage = message.substring(0, start) + emoji + message.substring(end);
+
+    setMessage(newMessage);
+
+    // Set cursor position after insertion
+    setTimeout(() => {
+      input.focus();
+      const newCursorPos = start + emoji.length;
+      input.setSelectionRange(newCursorPos, newCursorPos);
+    }, 0);
+  };
+
   const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const files = e.target.files;
     if (files && files.length > 0) {
       const newAttachments: Attachment[] = [];
-      
+
       for (let i = 0; i < files.length; i++) {
         const file = files[i];
         const attachment: Attachment = {
@@ -38,7 +80,7 @@ export const MessageInput = ({ onSend }: MessageInputProps) => {
         };
         newAttachments.push(attachment);
       }
-      
+
       setAttachments(prev => [...prev, ...newAttachments]);
       // Reset file input
       if (fileInputRef.current) {
@@ -57,7 +99,7 @@ export const MessageInput = ({ onSend }: MessageInputProps) => {
         <div className="flex flex-wrap gap-2 p-2 border border-dashed border-border rounded-lg">
           {attachments.map((attachment) => (
             <div key={attachment.id} className="flex items-center gap-2 bg-muted p-2 rounded-md">
-<span className="text-sm truncate max-w-30">{attachment.name}</span>
+              <span className="text-sm truncate max-w-30">{attachment.name}</span>
               <button
                 type="button"
                 onClick={() => removeAttachment(attachment.id)}
@@ -86,13 +128,60 @@ export const MessageInput = ({ onSend }: MessageInputProps) => {
         >
           <Paperclip size={16} />
         </Button>
+
+        {/* Emoji Picker */}
+        <Popover>
+          <PopoverTrigger asChild>
+            <Button
+              type="button"
+              variant="outline"
+              size="icon"
+              className="hover:bg-muted"
+            >
+              <Smile size={16} />
+            </Button>
+          </PopoverTrigger>
+          <PopoverContent
+            side="top"
+            align="start"
+            className="w-80 p-0 overflow-hidden border-border bg-background/95 backdrop-blur-md shadow-2xl rounded-xl"
+          >
+            <div className="h-72 overflow-y-auto scrollbar-hide p-2 bg-gradient-to-br from-background to-muted/30">
+              {EMOJI_CATEGORIES.map((category) => (
+                <div key={category.name} className="mb-4">
+                  <h4 className="text-[10px] font-bold uppercase tracking-wider text-muted-foreground px-2 mb-2 flex items-center gap-2">
+                    <span className="w-1 h-1 bg-[#ba0b0b] rounded-full" />
+                    {category.name}
+                  </h4>
+                  <div className="grid grid-cols-8 gap-1">
+                    {category.emojis.map((emoji) => (
+                      <button
+                        key={emoji}
+                        type="button"
+                        onClick={() => addEmoji(emoji)}
+                        className="text-xl hover:bg-muted p-1.5 rounded-lg transition-all hover:scale-125 hover:rotate-6 active:scale-95 duration-200"
+                      >
+                        {emoji}
+                      </button>
+                    ))}
+                  </div>
+                </div>
+              ))}
+            </div>
+            <div className="p-2 border-t border-border bg-muted/20 text-[10px] text-center text-muted-foreground font-medium italic">
+              ProLink Expressive Toolkit 🚚 Express yourself!
+            </div>
+          </PopoverContent>
+        </Popover>
+
         <Input
+          ref={inputRef}
           value={message}
           onChange={(e) => setMessage(e.target.value)}
           placeholder="Type a message..."
-          className="flex-1"
+          className="flex-1 bg-muted/30 border-muted focus-visible:ring-[#ba0b0b]"
         />
-        <Button type="submit" size="icon" disabled={!message.trim() && attachments.length === 0}>
+        <Button type="submit" size="icon" className="bg-[#ba0b0b] hover:bg-[#950606] shadow-lg active:scale-95 transition-all" disabled={!message.trim() && attachments.length === 0}>
           <Send size={16} />
         </Button>
       </div>
