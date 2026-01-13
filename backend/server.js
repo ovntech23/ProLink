@@ -86,16 +86,22 @@ io.on('connection', (socket) => {
     console.log('Socket join called, socket.user:', socket.user); // Debug log
     // Use the verified user from the JWT token instead of client-provided userId
     if (socket.user && socket.user.userId) {
-      connectedUsers.set(socket.user.userId, socket.id);
+      const userId = socket.user.userId;
+
+      // Join a room with the user's ID for robust message delivery
+      socket.join(userId);
+      console.log(`Socket ${socket.id} joined room ${userId}`);
+
+      connectedUsers.set(userId, socket.id);
 
       // Set user as online in Redis
-      await setUserOnline(socket.user.userId, socket.id);
+      await setUserOnline(userId, socket.id);
 
       // Broadcast online users to all clients
       const onlineUsers = await getOnlineUsers();
       io.emit('onlineUsers', onlineUsers);
 
-      console.log(`User ${socket.user.userId} joined with socket ${socket.id}`);
+      console.log(`User ${userId} joined with socket ${socket.id}`);
     } else {
       console.error('Socket join attempted without valid user authentication');
       socket.emit('error', { message: 'Authentication required' });
@@ -134,6 +140,8 @@ io.on('connection', (socket) => {
   // Handle sending a message
   socket.on('sendMessage', async (messageData) => {
     try {
+      console.log('sendMessage event received:', messageData);
+
       // Use the verified user from the JWT token
       const senderId = socket.user?.userId;
 
@@ -145,10 +153,15 @@ io.on('connection', (socket) => {
 
       const { recipientId, content, attachments } = messageData;
 
+      if (!recipientId) {
+        console.error('No recipientId provided');
+        return;
+      }
+
       // Check if recipient exists
       const recipient = await User.findById(recipientId);
       if (!recipient) {
-        console.error('Recipient not found');
+        console.error('Recipient not found:', recipientId);
         return;
       }
 
@@ -195,18 +208,17 @@ io.on('connection', (socket) => {
         read: savedMessage.read
       };
 
-      // Emit to recipient if online
-      const recipientSocketId = connectedUsers.get(recipientId);
-      if (recipientSocketId) {
-        socket.to(recipientSocketId).emit('receiveMessage', messageDataToEmit);
-        // Generic event for "new-message"
-        socket.to(recipientSocketId).emit('new-message', messageDataToEmit);
-      }
+      console.log(`Emitting message to recipient room: ${recipientId}`);
+
+      // Emit to recipient using their User ID room (more robust with Redis Adapter)
+      io.to(recipientId).emit('receiveMessage', messageDataToEmit);
+      io.to(recipientId).emit('new-message', messageDataToEmit);
 
       // Emit to sender for confirmation
       socket.emit('messageSent', messageDataToEmit);
     } catch (error) {
       console.error('Error sending message via WebSocket:', error);
+      socket.emit('error', { message: 'Failed to send message: ' + error.message });
     }
   });
 
