@@ -79,17 +79,22 @@ const sendMessage = async (req, res) => {
 
     // Emit message to sender for confirmation
     // Emit to sender's socket
-    io.emit('messageSent', messageData);
+    // Emit message to sender for confirmation using their User ID room
+    io.to(req.user.id.toString()).emit('messageSent', messageData);
 
-    // Emit message to recipient if they're online
-    io.emit('receiveMessage', messageData);
+    // Emit message to recipient using their User ID room
+    // Note: recipientId might be null if using conversationId, so use actualRecipientId derived above (but I need to ensure it's defined before this block or re-derive it)
+    const targetRecipientId = recipientId || conversation.participants.find(p => p.toString() !== req.user.id).toString();
+
+    io.to(targetRecipientId).emit('receiveMessage', messageData);
+    io.to(targetRecipientId).emit('new-message', messageData); // Strict adherence to new architecture event names
 
     // Cache the message in Redis
     await cacheMessage(savedMessage._id.toString(), messageData);
 
     // Invalidate conversation cache for both users
     const senderId = req.user.id.toString();
-    const actualRecipientId = recipientId || conversation.participants.find(p => p.toString() !== req.user.id).toString();
+    // actualRecipientId is already defined above
     await invalidateConversationCache(senderId);
     await invalidateConversationCache(actualRecipientId);
 
