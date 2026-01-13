@@ -362,7 +362,7 @@ export const useStore = create<AppState>((set, get) => ({
       }
 
       const result = { drivers: newDrivers, users: newUsers, shipments: newShipments };
-      
+
       // Broadcast the update to other clients
       get().broadcastDriverUpdate(driverId, updates);
 
@@ -651,6 +651,68 @@ export const useStore = create<AppState>((set, get) => ({
         users: state.users.map(u =>
           u.id === userData.id ? { ...u, ...userData } : u
         )
+      }));
+    });
+
+    // Listen for generic data-updated event
+    socket.on('data-updated', (payload: { type: string; action: string; data: any }) => {
+      const { type, action, data } = payload;
+      console.log('Received data-updated:', payload);
+
+      if (type === 'shipment') {
+        set(state => {
+          if (action === 'create') {
+            return { shipments: [data, ...state.shipments] };
+          } else if (action === 'update') {
+            return {
+              shipments: state.shipments.map(s =>
+                s.id === data.id ? { ...s, ...data } : s
+              )
+            };
+          } else if (action === 'delete') {
+            return {
+              shipments: state.shipments.filter(s => s.id !== data.id)
+            };
+          }
+          return {};
+        });
+      } else if (type === 'user') {
+        set(state => {
+          // Handle user updates (affecting both users and drivers lists)
+          let newUsers = state.users;
+          let newDrivers = state.drivers;
+
+          if (action === 'create') {
+            newUsers = [data, ...state.users];
+            if (data.role === 'driver') {
+              newDrivers = [data as DriverProfile, ...state.drivers];
+            }
+          } else if (action === 'update') {
+            newUsers = state.users.map(u => u.id === data.id ? { ...u, ...data } : u);
+            newDrivers = state.drivers.map(d => d.id === data.id ? { ...d, ...data } : d);
+          } else if (action === 'delete') {
+            newUsers = state.users.filter(u => u.id !== data.id);
+            newDrivers = state.drivers.filter(d => d.id !== data.id);
+          }
+
+          return { users: newUsers, drivers: newDrivers };
+        });
+      }
+    });
+
+    // Listen for new-message event
+    socket.on('new-message', (message: Message) => {
+      console.log('Received new-message:', message);
+      set((state) => ({
+        messages: [...state.messages, {
+          id: message.id,
+          senderId: message.senderId,
+          recipientId: message.recipientId,
+          content: message.content,
+          timestamp: message.timestamp,
+          read: message.read,
+          attachments: message.attachments
+        }]
       }));
     });
   },

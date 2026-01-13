@@ -8,6 +8,7 @@ const helmet = require('helmet');
 const path = require('path');
 const http = require('http');
 const { Server } = require('socket.io');
+const { createAdapter } = require('@socket.io/redis-adapter');
 const { verify } = require('jsonwebtoken');
 const Message = require('./models/Message');
 const Conversation = require('./models/Conversation');
@@ -49,7 +50,8 @@ const io = new Server(server, {
     ],
     methods: ["GET", "POST"],
     credentials: true
-  }
+  },
+  adapter: createAdapter(redisPub, redisSub)
 });
 
 // Store connected users
@@ -197,6 +199,8 @@ io.on('connection', (socket) => {
       const recipientSocketId = connectedUsers.get(recipientId);
       if (recipientSocketId) {
         socket.to(recipientSocketId).emit('receiveMessage', messageDataToEmit);
+        // Generic event for "new-message"
+        socket.to(recipientSocketId).emit('new-message', messageDataToEmit);
       }
 
       // Emit to sender for confirmation
@@ -374,7 +378,99 @@ const connectDB = async () => {
 };
 
 // Initialize database connection
-connectDB();
+connectDB().then(() => {
+  // Set up MongoDB change streams after successful connection
+  setupChangeStreams();
+});
+
+// Set up MongoDB change streams for real-time updates
+const setupChangeStreams = () => {
+  try {
+    // Shipment change stream
+    const shipmentCollection = mongoose.connection.collection('shipments');
+    const shipmentChangeStream = shipmentCollection.watch();
+
+    shipmentChangeStream.on('change', (change) => {
+      console.log('Shipment change detected:', change.operationType, change.documentKey);
+
+      // Emit different events based on operation type
+      let action = 'unknown';
+      let data = {};
+
+      switch (change.operationType) {
+        case 'insert':
+          action = 'create';
+          data = { id: change.fullDocument._id, ...change.fullDocument };
+          io.emit('shipmentCreated', data);
+          break;
+        case 'update':
+        case 'replace':
+          action = 'update';
+          data = { id: change.documentKey._id, ...change.fullDocument };
+          io.emit('shipmentUpdate', data);
+          break;
+        case 'delete':
+          action = 'delete';
+          data = { id: change.documentKey._id };
+          io.emit('shipmentDeleted', data);
+          break;
+      }
+
+      // Generic event: data-updated
+      if (action !== 'unknown') {
+        io.emit('data-updated', {
+          type: 'shipment',
+          action,
+          data
+        });
+      }
+    });
+
+    // Driver/User change stream
+    const userCollection = mongoose.connection.collection('users');
+    const userChangeStream = userCollection.watch();
+
+    userChangeStream.on('change', (change) => {
+      console.log('User/Driver change detected:', change.operationType, change.documentKey);
+
+      // Emit different events based on operation type
+      let action = 'unknown';
+      let data = {};
+
+      switch (change.operationType) {
+        case 'insert':
+          action = 'create';
+          data = { id: change.fullDocument._id, ...change.fullDocument };
+          io.emit('userCreated', data);
+          break;
+        case 'update':
+        case 'replace':
+          action = 'update';
+          data = { id: change.documentKey._id, ...change.fullDocument };
+          io.emit('userUpdate', data);
+          break;
+        case 'delete':
+          action = 'delete';
+          data = { id: change.documentKey._id };
+          io.emit('userDeleted', data);
+          break;
+      }
+
+      // Generic event: data-updated
+      if (action !== 'unknown') {
+        io.emit('data-updated', {
+          type: 'user', // Note: this covers drivers too as they are users
+          action,
+          data
+        });
+      }
+    });
+
+    console.log('✅ MongoDB change streams initialized');
+  } catch (error) {
+    console.error('❌ Error setting up change streams:', error);
+  }
+};
 
 // Start server
 const PORT = process.env.PORT || 5000;
