@@ -11,7 +11,11 @@ let socket: Socket | null = null;
 export const initSocket = (token: string) => {
   if (!socket) {
     socket = io(SERVER_URL, {
-      transports: ['websocket'],
+      transports: ['websocket', 'polling'], // Enable polling fallback
+      withCredentials: true,
+      reconnection: true,
+      reconnectionAttempts: 5,
+      reconnectionDelay: 1000,
       auth: {
         token: token
       }
