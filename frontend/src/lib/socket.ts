@@ -11,22 +11,27 @@ declare global {
   }
 }
 
-// Create the socket connection
+// Create the socket connection & track active token
 let socket: Socket | null = window._socket || null;
+let activeToken: string | null = null;
 
 // Initialize the socket connection with token authentication
 export const initSocket = (token: string) => {
-  // If socket exists and is connected, don't create a new one unless token changed (advanced logic), 
-  // but for now, just return existing if present to prevent duplicates.
-  if (socket && socket.connected) {
+  // If we have an active socket with the same token, reuse it
+  if (socket && activeToken === token) {
+    if (!socket.connected) {
+      socket.connect();
+    }
     return socket;
   }
 
-  // If we have an existing socket but we are re-initializing (e.g. login with new token), 
-  // we might want to disconnect previous.
+  // If we have an existing socket but with a different token (or no token tracked yet), clean it up
   if (socket) {
     socket.disconnect();
+    socket.removeAllListeners(); // Ensure no listeners remain
   }
+
+  activeToken = token;
 
   socket = io(SERVER_URL, {
     transports: ['websocket', 'polling'], // Enable polling fallback
@@ -115,5 +120,6 @@ export const disconnectSocket = () => {
     socket.disconnect();
     socket = null;
     window._socket = null;
+    activeToken = null;
   }
 };
