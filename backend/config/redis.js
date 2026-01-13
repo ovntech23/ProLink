@@ -47,6 +47,7 @@ if (process.env.NODE_ENV === 'production') {
         async keys(pattern) { return []; }
         async publish(channel, message) { return 1; }
         async subscribe(channel) { return 1; }
+        async psubscribe(pattern) { return 1; }
         async quit() { return 'OK'; }
         duplicate() { return new MockRedis(); }
     }

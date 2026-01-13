@@ -1,13 +1,8 @@
 const Shipment = require('../models/Shipment');
 
 // Import io instance for WebSocket events
-let io;
-try {
-  const serverModule = require('../server');
-  io = serverModule.io;
-} catch (error) {
-  console.warn('Could not import io from server module:', error.message);
-}
+// Import io instance for WebSocket events - Removed circular dependency
+// io is now retrieved from req.app.get('io') in controllers
 
 // @desc    Get all shipments
 // @route   GET /api/shipments
@@ -66,6 +61,8 @@ const updateShipment = async (req, res) => {
 
         if (shipment) {
             // Emit WebSocket event for real-time updates
+            // Emit WebSocket event for real-time updates
+            const io = req.app.get('io');
             if (io) {
                 io.emit('shipmentUpdate', {
                     id: shipment._id,

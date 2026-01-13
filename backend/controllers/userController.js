@@ -3,13 +3,8 @@ const bcrypt = require('bcryptjs');
 const { generateToken } = require('../middleware/auth');
 
 // Import io instance for WebSocket events
-let io;
-try {
-  const serverModule = require('../server');
-  io = serverModule.io;
-} catch (error) {
-  console.warn('Could not import io from server module:', error.message);
-}
+// Import io instance for WebSocket events - Removed circular dependency
+// io is now retrieved from req.app.get('io') in controllers
 
 // @desc    Register a new user
 // @route   POST /api/users/register
@@ -180,6 +175,7 @@ const updateUser = async (req, res) => {
       const updatedUser = await user.save();
 
       // Emit WebSocket event for real-time updates
+      const io = req.app.get('io');
       if (io) {
         io.emit('userUpdate', {
           id: updatedUser._id,
