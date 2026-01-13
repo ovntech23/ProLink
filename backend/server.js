@@ -252,20 +252,42 @@ io.on('connection', (socket) => {
   });
 });
 
+// Middleware
+// Configure CORS to allow requests from deployed frontend
+const corsOptions = {
+  origin: [
+    'http://localhost:5173', // Local development
+    'http://localhost:5000', // Backend on same host
+    'http://*.sslip.io', // Coolify deployed apps
+    'https://*.sslip.io', // Secure Coolify deployed apps
+    'http://prolinkafrica.com', // Production domain
+    'https://prolinkafrica.com', // Secure production domain
+    'https://www.prolinkafrica.com' // Secure production domain (www)
+  ],
+  methods: ['GET', 'POST', 'PUT', 'DELETE', 'PATCH', 'OPTIONS'],
+  allowedHeaders: ['Content-Type', 'Authorization', 'X-Requested-With', 'Accept', 'Origin'],
+  credentials: true,
+  optionsSuccessStatus: 200
+};
+
+app.use(cors(corsOptions));
+// Enable pre-flight request for all routes
+app.options('*', cors(corsOptions));
+
 // Rate limiting
 const generalLimiter = rateLimit({
   windowMs: 15 * 60 * 1000, // 15 minutes
-  max: 100, // limit each IP to 100 requests per windowMs
+  max: 1000, // INCREASED from 100 to 1000 to prevent false positives during dashboard usage
   message: {
     error: 'Too many requests from this IP, please try again later.'
   },
-  standardHeaders: true, // Return rate limit info in the `RateLimit-*` headers
-  legacyHeaders: false, // Disable the `X-RateLimit-*` headers
+  standardHeaders: true,
+  legacyHeaders: false,
 });
 
 const authLimiter = rateLimit({
-  windowMs: 15 * 60 * 1000, // 15 minutes
-  max: 5, // limit each IP to 5 requests per windowMs for auth endpoints
+  windowMs: 15 * 60 * 1000,
+  max: 20, // INCREASED from 5 to 20
   message: {
     error: 'Too many authentication attempts, please try again later.'
   },
@@ -301,26 +323,6 @@ app.use(helmet({
 
 // Middleware
 // Configure CORS to allow requests from deployed frontend
-const corsOptions = {
-  origin: [
-    'http://localhost:5173', // Local development
-    'http://localhost:5000', // Backend on same host
-    'http://*.sslip.io', // Coolify deployed apps
-    'https://*.sslip.io', // Secure Coolify deployed apps
-    'http://prolinkafrica.com', // Production domain
-    'https://prolinkafrica.com', // Secure production domain
-    'https://www.prolinkafrica.com' // Secure production domain (www)
-  ],
-  methods: ['GET', 'POST', 'PUT', 'DELETE', 'PATCH', 'OPTIONS'],
-  allowedHeaders: ['Content-Type', 'Authorization', 'X-Requested-With'],
-  credentials: true,
-  optionsSuccessStatus: 200
-};
-
-app.use(cors(corsOptions));
-// Enable pre-flight request for all routes
-app.options('*', cors(corsOptions));
-
 app.use(express.json({ limit: '10mb' }));
 app.use(morgan('combined'));
 
