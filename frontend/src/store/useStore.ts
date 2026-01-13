@@ -1,6 +1,6 @@
 import { create } from 'zustand';
 import { driverApi, authApi, userApi, shipmentApi, paymentApi, messageApi } from '../lib/api';
-import { initSocket, sendSocketMessage, onMessageReceived, onOnlineUsersUpdate, disconnectSocket, getSocket } from '../lib/socket';
+import { initSocket, sendSocketMessage, onOnlineUsersUpdate, disconnectSocket, getSocket } from '../lib/socket';
 
 export type UserRole = 'broker' | 'driver' | 'owner';
 
@@ -205,20 +205,6 @@ export const useStore = create<AppState>((set, get) => ({
       // Initialize WebSocket connection with token
       initSocket(response.data.token);
 
-      // Listen for incoming messages
-      onMessageReceived((message) => {
-        set((state) => ({
-          messages: [...state.messages, {
-            id: message.id,
-            senderId: message.senderId,
-            recipientId: message.recipientId,
-            content: message.content,
-            timestamp: message.timestamp,
-            read: message.read
-          }]
-        }));
-      });
-
       // Setup online users listener
       onOnlineUsersUpdate((userIds) => {
         set({ onlineUsers: userIds });
@@ -253,20 +239,6 @@ export const useStore = create<AppState>((set, get) => ({
 
       set({ currentUser: user });
       initSocket(token);
-
-      // Setup message listener
-      onMessageReceived((message) => {
-        set((state) => ({
-          messages: [...state.messages, {
-            id: message.id,
-            senderId: message.senderId,
-            recipientId: message.recipientId,
-            content: message.content,
-            timestamp: message.timestamp,
-            read: message.read
-          }]
-        }));
-      });
 
       // Setup online users listener
       onOnlineUsersUpdate((userIds) => {
@@ -623,6 +595,13 @@ export const useStore = create<AppState>((set, get) => ({
     socket.emit('subscribeToUpdates', {
       updateTypes: ['shipment', 'driver', 'user']
     });
+
+    // Clean up existing listeners to prevent duplicates
+    socket.off('shipmentUpdate');
+    socket.off('driverUpdate');
+    socket.off('userUpdate');
+    socket.off('data-updated');
+    socket.off('new-message');
 
     // Listen for shipment updates
     socket.on('shipmentUpdate', (shipmentData: Partial<Shipment>) => {

@@ -225,7 +225,6 @@ io.on('connection', (socket) => {
       console.log(`Emitting message to recipient room: ${recipientId}`);
 
       // Emit to recipient using their User ID room (more robust with Redis Adapter)
-      io.to(recipientId).emit('receiveMessage', messageDataToEmit);
       io.to(recipientId).emit('new-message', messageDataToEmit);
 
       // Emit to sender for confirmation
