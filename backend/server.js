@@ -318,6 +318,9 @@ const corsOptions = {
 };
 
 app.use(cors(corsOptions));
+// Enable pre-flight request for all routes
+app.options('*', cors(corsOptions));
+
 app.use(express.json({ limit: '10mb' }));
 app.use(morgan('combined'));
 
