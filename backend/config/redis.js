@@ -66,6 +66,14 @@ redisClient.on('connect', () => {
     console.log('✅ Redis Client Connected');
 });
 
+redisPub.on('error', (err) => {
+    console.error('❌ Redis Pub Error:', err);
+});
+
+redisSub.on('error', (err) => {
+    console.error('❌ Redis Sub Error:', err);
+});
+
 module.exports = {
     redisClient,
     redisPub,
