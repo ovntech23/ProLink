@@ -311,6 +311,8 @@ const corsOptions = {
     'https://prolinkafrica.com', // Secure production domain
     'https://www.prolinkafrica.com' // Secure production domain (www)
   ],
+  methods: ['GET', 'POST', 'PUT', 'DELETE', 'PATCH', 'OPTIONS'],
+  allowedHeaders: ['Content-Type', 'Authorization', 'X-Requested-With'],
   credentials: true,
   optionsSuccessStatus: 200
 };
