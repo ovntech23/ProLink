@@ -699,6 +699,13 @@ export const useStore = create<AppState>((set, get) => ({
     // Listen for new-message event
     socket.on('new-message', (message: Message) => {
       console.log('Received new-message:', message);
+
+      // Ignore messages sent by current user to avoid duplication with optimistic updates
+      const { currentUser } = get();
+      if (currentUser && message.senderId === currentUser.id) {
+        return;
+      }
+
       set((state) => ({
         messages: [...state.messages, {
           id: message.id,
