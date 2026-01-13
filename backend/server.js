@@ -37,7 +37,8 @@ const app = express();
 const server = http.createServer(app);
 
 // Initialize Socket.IO
-const io = new Server(server, {
+// Initialize Socket.IO with optional Redis adapter
+let socketConfig = {
   cors: {
     origin: [
       'http://localhost:5173', // Local development
@@ -50,9 +51,22 @@ const io = new Server(server, {
     ],
     methods: ["GET", "POST"],
     credentials: true
-  },
-  adapter: createAdapter(redisPub, redisSub)
-});
+  }
+};
+
+// Only use Redis adapter in production or if explicitly enabled
+// This prevents local development crashes if Docker/Redis is not running
+if (process.env.NODE_ENV === 'production') {
+  socketConfig.adapter = createAdapter(redisPub, redisSub);
+} else {
+  console.log('⚠️ Running in development mode: Redis Adapter for Socket.IO is DISABLED to allow offline development.');
+  console.log('   To enable Redis Adapter, set NODE_ENV=production');
+}
+
+const io = new Server(server, socketConfig);
+
+// Make io accessible to our router
+app.set('io', io);
 
 // Store connected users
 const connectedUsers = new Map();

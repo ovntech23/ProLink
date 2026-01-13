@@ -9,8 +9,8 @@ const { cacheMessage, invalidateConversationCache } = require('../utils/redisCac
 const sendMessage = async (req, res) => {
   try {
     const { conversationId, recipientId, content, attachments } = req.body;
-    // Dynamic import to avoid circular dependency
-    const { io } = require('../server');
+    // Get io instance from app settings to avoid circular dependency
+    const io = req.app.get('io');
 
     // Validate input
     if (!content || content.trim() === '') {
@@ -96,7 +96,7 @@ const sendMessage = async (req, res) => {
     const senderId = req.user.id.toString();
     // actualRecipientId is already defined above
     await invalidateConversationCache(senderId);
-    await invalidateConversationCache(actualRecipientId);
+    await invalidateConversationCache(targetRecipientId);
 
     res.status(201).json(savedMessage);
   } catch (error) {
