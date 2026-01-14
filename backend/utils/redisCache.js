@@ -134,6 +134,48 @@ async function invalidateConversationCache(userId) {
     }
 }
 
+/**
+ * Cache message history for a user
+ */
+async function cacheMessageHistory(userId, messages) {
+    if (!redisClient) return false;
+    try {
+        const key = `messages:${userId}`;
+        await redisClient.setex(key, CACHE_TTL.MESSAGE, JSON.stringify(messages));
+        return true;
+    } catch (error) {
+        return false;
+    }
+}
+
+/**
+ * Get cached message history
+ */
+async function getCachedMessageHistory(userId) {
+    if (!redisClient) return null;
+    try {
+        const key = `messages:${userId}`;
+        const data = await redisClient.get(key);
+        return data ? JSON.parse(data) : null;
+    } catch (error) {
+        return null;
+    }
+}
+
+/**
+ * Invalidate message history cache
+ */
+async function invalidateMessageHistoryCache(userId) {
+    if (!redisClient) return false;
+    try {
+        const key = `messages:${userId}`;
+        await redisClient.del(key);
+        return true;
+    } catch (error) {
+        return false;
+    }
+}
+
 module.exports = {
     cacheConversation,
     getCachedConversation,
@@ -143,5 +185,8 @@ module.exports = {
     setUserOffline,
     isUserOnline,
     getOnlineUsers,
-    invalidateConversationCache
+    invalidateConversationCache,
+    cacheMessageHistory,
+    getCachedMessageHistory,
+    invalidateMessageHistoryCache
 };

@@ -1,7 +1,13 @@
 const Message = require('../models/Message');
 const Conversation = require('../models/Conversation');
 const User = require('../models/User');
-const { cacheMessage, invalidateConversationCache } = require('../utils/redisCache');
+const {
+  cacheMessage,
+  invalidateConversationCache,
+  cacheMessageHistory,
+  getCachedMessageHistory,
+  invalidateMessageHistoryCache
+} = require('../utils/redisCache');
 
 // @desc Send a new message
 // @route POST /api/messages
@@ -92,11 +98,13 @@ const sendMessage = async (req, res) => {
     // Cache the message in Redis
     await cacheMessage(savedMessage._id.toString(), messageData);
 
-    // Invalidate conversation cache for both users
+    // Invalidate conversation and message history cache for both users
     const senderId = req.user.id.toString();
     // actualRecipientId is already defined above
     await invalidateConversationCache(senderId);
     await invalidateConversationCache(targetRecipientId);
+    await invalidateMessageHistoryCache(senderId);
+    await invalidateMessageHistoryCache(targetRecipientId);
 
     res.status(201).json(savedMessage);
   } catch (error) {
@@ -110,6 +118,14 @@ const sendMessage = async (req, res) => {
 // @access Private
 const getMessages = async (req, res) => {
   try {
+    const userId = req.user.id.toString();
+
+    // Check cache first
+    const cachedMessages = await getCachedMessageHistory(userId);
+    if (cachedMessages) {
+      return res.json(cachedMessages);
+    }
+
     const messages = await Message.find({
       $or: [
         { sender: req.user.id },
@@ -120,6 +136,9 @@ const getMessages = async (req, res) => {
       .populate('recipient', 'name email role')
       .populate('conversationId')
       .sort({ createdAt: -1 });
+
+    // Cache the results
+    await cacheMessageHistory(userId, messages);
 
     res.json(messages);
   } catch (error) {
@@ -147,6 +166,10 @@ const markAsRead = async (req, res) => {
     message.read = true;
     message.readAt = new Date();
     await message.save();
+
+    // Invalidate message history cache for both sender and recipient
+    await invalidateMessageHistoryCache(message.sender.toString());
+    await invalidateMessageHistoryCache(message.recipient.toString());
 
     // Notify the sender that the message has been read
     const io = req.app.get('io');

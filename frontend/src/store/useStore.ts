@@ -140,61 +140,46 @@ export const useStore = create<AppState>((set, get) => ({
   // Initialize store with data from API
   init: async () => {
     try {
-      // Fetch data with individual error handling
-      let drivers = [];
-      let users = [];
-      let shipments = [];
-      let payments = [];
-      let messages = [];
+      const { currentUser } = get();
+      if (!currentUser) return;
 
-      try {
-        console.log('Fetching drivers...');
-        const { data: driversData } = await driverApi.getDrivers();
-        console.log('Drivers received:', driversData);
-        drivers = driversData.map((d: any) => ({ ...d, id: d._id }));
-        console.log('Mapped drivers:', drivers);
-      } catch (error) {
-        console.warn('Failed to fetch drivers:', error);
-      }
+      console.log('Initializing store data in parallel...');
 
-      try {
-        const { data: usersData } = await userApi.getUsers();
-        users = usersData.map((u: any) => ({ ...u, id: u._id }));
-      } catch (error) {
-        console.warn('Failed to fetch users:', error);
-      }
+      // Define all possible fetch operations
+      const fetchOps = [
+        { name: 'drivers', op: driverApi.getDrivers, mapper: (data: any[]) => data.map(d => ({ ...d, id: d._id })) },
+        { name: 'users', op: userApi.getUsers, mapper: (data: any[]) => data.map(u => ({ ...u, id: u._id })) },
+        { name: 'shipments', op: shipmentApi.getShipments, mapper: (data: any[]) => data.map(s => ({ ...s, id: s._id })) },
+        { name: 'payments', op: paymentApi.getPayments, mapper: (data: any[]) => data.map(p => ({ ...p, id: p._id })) },
+        {
+          name: 'messages', op: messageApi.getMessages, mapper: (data: any[]) => data.map(m => ({
+            ...m,
+            id: m._id || m.id,
+            senderId: m.sender?._id || m.sender?.id || m.sender,
+            recipientId: m.recipient?._id || m.recipient?.id || m.recipient,
+            timestamp: m.createdAt || m.timestamp
+          }))
+        }
+      ];
 
-      try {
-        console.log('Fetching shipments...');
-        const { data: shipmentsData } = await shipmentApi.getShipments();
-        console.log('Shipments received:', shipmentsData);
-        shipments = shipmentsData.map((s: any) => ({ ...s, id: s._id }));
-        console.log('Mapped shipments:', shipments);
-      } catch (error) {
-        console.warn('Failed to fetch shipments:', error);
-      }
+      // Filter operations based on user role (expandable logic)
+      const activeOps = fetchOps;
 
-      try {
-        const { data: paymentsData } = await paymentApi.getPayments();
-        payments = paymentsData.map((p: any) => ({ ...p, id: p._id }));
-      } catch (error) {
-        console.warn('Failed to fetch payments:', error);
-      }
+      const results = await Promise.allSettled(activeOps.map(op => op.op()));
 
-      try {
-        const { data: messagesData } = await messageApi.getMessages();
-        messages = messagesData.map((m: any) => ({
-          ...m,
-          id: m._id || m.id,
-          senderId: m.sender?._id || m.sender?.id || m.sender,
-          recipientId: m.recipient?._id || m.recipient?.id || m.recipient,
-          timestamp: m.createdAt || m.timestamp
-        }));
-      } catch (error) {
-        console.warn('Failed to fetch messages:', error);
-      }
+      const newState: any = {};
+      results.forEach((result, index) => {
+        const opName = activeOps[index].name;
+        if (result.status === 'fulfilled') {
+          newState[opName] = activeOps[index].mapper(result.value.data);
+        } else {
+          console.warn(`Failed to fetch ${opName}:`, result.reason);
+          newState[opName] = [];
+        }
+      });
 
-      set({ drivers, users, shipments, payments, messages });
+      set(newState);
+      console.log('Store initialization complete.');
     } catch (error) {
       console.error('Failed to initialize store:', error);
     }

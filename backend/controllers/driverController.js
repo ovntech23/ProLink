@@ -9,7 +9,7 @@ const User = require('../models/User');
 // @access Public
 const getDrivers = async (req, res) => {
   try {
-    const drivers = await User.find({ role: 'driver' });
+    const drivers = await User.find({ role: 'driver' }).select('-avatar -vehicleImage');
     res.json(drivers);
   } catch (error) {
     console.error(error);

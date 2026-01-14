@@ -9,8 +9,16 @@ const Shipment = require('../models/Shipment');
 // @access  Private
 const getShipments = async (req, res) => {
     try {
-        console.log('GET /api/shipments - Fetching all shipments');
-        const shipments = await Shipment.find({});
+        console.log(`GET /api/shipments - Fetching shipments for user: ${req.user.name} (${req.user.role})`);
+
+        let query = {};
+        if (req.user.role === 'owner') {
+            query.ownerId = req.user._id;
+        } else if (req.user.role === 'driver') {
+            query.driverId = req.user._id;
+        }
+
+        const shipments = await Shipment.find(query);
         console.log(`Found ${shipments.length} shipments`);
         res.json(shipments);
     } catch (error) {

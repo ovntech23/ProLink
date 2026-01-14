@@ -1,17 +1,26 @@
 const Conversation = require('../models/Conversation');
 const Message = require('../models/Message');
 const User = require('../models/User');
+const { cacheConversation, getCachedConversation, invalidateConversationCache } = require('../utils/redisCache');
 
 // @desc    Get all conversations for a user
 // @route   GET /api/conversations
 // @access  Private
 const getConversations = async (req, res) => {
   try {
+    const userId = req.user.id.toString();
+
+    // Check cache first
+    const cachedConversations = await getCachedConversation(userId);
+    if (cachedConversations) {
+      return res.json(cachedConversations);
+    }
+
     const conversations = await Conversation.find({
       participants: req.user.id
     })
-    .populate('participants', 'name email role')
-    .sort({ updatedAt: -1 });
+      .populate('participants', 'name email role')
+      .sort({ updatedAt: -1 });
 
     // Add last message and unread count for each conversation
     const conversationsWithDetails = await Promise.all(
@@ -25,7 +34,7 @@ const getConversations = async (req, res) => {
         const lastMessage = await Message.findOne({
           conversationId: conversation._id
         })
-        .sort({ createdAt: -1 });
+          .sort({ createdAt: -1 });
 
         // Get unread message count for this conversation
         const unreadCount = await Message.countDocuments({
@@ -42,6 +51,9 @@ const getConversations = async (req, res) => {
         };
       })
     );
+
+    // Cache the results
+    await cacheConversation(userId, conversationsWithDetails);
 
     res.json(conversationsWithDetails);
   } catch (error) {
@@ -85,6 +97,10 @@ const startConversation = async (req, res) => {
     // Populate participants
     await savedConversation.populate('participants', 'name email role');
 
+    // Invalidate cache for both participants
+    await invalidateConversationCache(req.user.id.toString());
+    await invalidateConversationCache(participantId.toString());
+
     res.status(201).json({
       conversation: savedConversation,
       message: 'Conversation started successfully'
@@ -119,7 +135,7 @@ const getMessages = async (req, res) => {
       .sort({ createdAt: 1 });
 
     // Mark messages as read if they belong to the current user
-    await Message.updateMany(
+    const result = await Message.updateMany(
       {
         conversationId,
         recipient: req.user.id,
@@ -130,6 +146,12 @@ const getMessages = async (req, res) => {
         readAt: new Date()
       }
     );
+
+    // If any messages were updated, invalidate conversation cache
+    if (result.matchedCount > 0) {
+      await invalidateConversationCache(req.user.id.toString());
+      // Also might need to invalidate history cache if used
+    }
 
     res.json(messages);
   } catch (error) {
