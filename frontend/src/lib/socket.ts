@@ -72,10 +72,10 @@ export const getSocket = () => {
   return socket;
 };
 
-// Send a message through WebSocket
-export const sendSocketMessage = (messageData: any) => {
+// Send a data through WebSocket
+export const sendSocketMessage = (eventName: string, data: any) => {
   if (socket) {
-    socket.emit('sendMessage', messageData);
+    socket.emit(eventName, data);
   }
 };
 

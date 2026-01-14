@@ -14,7 +14,7 @@ const {
 // @access Private
 const sendMessage = async (req, res) => {
   try {
-    const { conversationId, recipientId, content, attachments } = req.body;
+    const { conversationId, recipientId, content, attachments, replyTo } = req.body;
     // Get io instance from app settings to avoid circular dependency
     const io = req.app.get('io');
 
@@ -58,7 +58,8 @@ const sendMessage = async (req, res) => {
         p => p.toString() !== req.user.id
       ),
       content,
-      attachments
+      attachments,
+      replyTo // Add reply data if present
     });
 
     const savedMessage = await message.save();
@@ -79,34 +80,82 @@ const sendMessage = async (req, res) => {
       recipient: savedMessage.recipient,
       content: savedMessage.content,
       attachments: savedMessage.attachments,
+      replyTo: savedMessage.replyTo,
       createdAt: savedMessage.createdAt,
-      read: savedMessage.read
+      read: savedMessage.read,
+      reactions: []
     };
 
-    // Emit message to sender for confirmation
-    // Emit to sender's socket
     // Emit message to sender for confirmation using their User ID room
     io.to(req.user.id.toString()).emit('messageSent', messageData);
 
-    // Emit message to recipient using their User ID room
-    // Note: recipientId might be null if using conversationId, so use actualRecipientId derived above (but I need to ensure it's defined before this block or re-derive it)
-    const targetRecipientId = recipientId || conversation.participants.find(p => p.toString() !== req.user.id).toString();
+    const targetRecipientId = (recipientId || conversation.participants.find(p => p.toString() !== req.user.id)).toString();
 
-    io.to(targetRecipientId).emit('receiveMessage', messageData);
-    io.to(targetRecipientId).emit('new-message', messageData); // Strict adherence to new architecture event names
+    io.to(targetRecipientId).emit('new-message', messageData);
 
     // Cache the message in Redis
     await cacheMessage(savedMessage._id.toString(), messageData);
 
-    // Invalidate conversation and message history cache for both users
+    // Invalidate caches
     const senderId = req.user.id.toString();
-    // actualRecipientId is already defined above
     await invalidateConversationCache(senderId);
     await invalidateConversationCache(targetRecipientId);
     await invalidateMessageHistoryCache(senderId);
     await invalidateMessageHistoryCache(targetRecipientId);
 
     res.status(201).json(savedMessage);
+  } catch (error) {
+    console.error(error);
+    res.status(500).json({ message: 'Server error' });
+  }
+};
+
+// @desc Add a reaction to a message
+// @route POST /api/messages/:id/react
+// @access Private
+const addReaction = async (req, res) => {
+  try {
+    const { emoji } = req.body;
+    const message = await Message.findById(req.params.id);
+
+    if (!message) {
+      return res.status(404).json({ message: 'Message not found' });
+    }
+
+    // Check if user already reacted with this emoji
+    const existingReactionIndex = message.reactions.findIndex(
+      r => r.user.toString() === req.user.id.toString() && r.emoji === emoji
+    );
+
+    if (existingReactionIndex > -1) {
+      // Remove reaction if already exists (toggle)
+      message.reactions.splice(existingReactionIndex, 1);
+    } else {
+      // Add new reaction
+      message.reactions.push({
+        user: req.user.id,
+        emoji
+      });
+    }
+
+    await message.save();
+
+    // Invalidate caches
+    await invalidateMessageHistoryCache(message.sender.toString());
+    await invalidateMessageHistoryCache(message.recipient.toString());
+
+    // Emit WebSocket event for real-time reaction update
+    const io = req.app.get('io');
+    const reactionData = {
+      messageId: message._id,
+      conversationId: message.conversationId,
+      reactions: message.reactions
+    };
+
+    io.to(message.sender.toString()).emit('messageReaction', reactionData);
+    io.to(message.recipient.toString()).emit('messageReaction', reactionData);
+
+    res.json(message.reactions);
   } catch (error) {
     console.error(error);
     res.status(500).json({ message: 'Server error' });

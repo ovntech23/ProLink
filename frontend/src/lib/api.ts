@@ -252,6 +252,13 @@ export const messageApi = {
     });
     return response.data;
   },
+  addReaction: async (messageId: string, emoji: string): Promise<any> => {
+    const response = await fetchApi<any>(`/api/messages/${messageId}/react`, {
+      method: 'POST',
+      body: JSON.stringify({ emoji }),
+    });
+    return response.data;
+  },
 };
 
 // Conversations API

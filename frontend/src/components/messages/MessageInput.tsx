@@ -1,8 +1,9 @@
 import { useState, useRef } from 'react';
 import { Button } from '../ui/button';
 import { Input } from '../ui/input';
-import { Send, Paperclip, Smile } from 'lucide-react';
+import { Send, Paperclip, Smile, X } from 'lucide-react';
 import { Popover, PopoverContent, PopoverTrigger } from '../ui/popover';
+import { useStore } from '../../store/useStore';
 import type { Attachment } from '../../store/useStore';
 
 const EMOJI_CATEGORIES = [
@@ -31,6 +32,7 @@ interface MessageInputProps {
 export const MessageInput = ({ onSend }: MessageInputProps) => {
   const [message, setMessage] = useState('');
   const [attachments, setAttachments] = useState<Attachment[]>([]);
+  const { replyTo, setReplyTo } = useStore();
   const fileInputRef = useRef<HTMLInputElement>(null);
   const inputRef = useRef<HTMLInputElement>(null);
 
@@ -94,7 +96,26 @@ export const MessageInput = ({ onSend }: MessageInputProps) => {
   };
 
   return (
-    <form onSubmit={handleSubmit} className="flex flex-col gap-2">
+    <form onSubmit={handleSubmit} className="flex flex-col gap-2 relative">
+      {/* Reply Preview */}
+      {replyTo && (
+        <div className="flex items-center justify-between p-2 bg-muted/80 backdrop-blur-sm border-l-4 border-[#ba0b0b] rounded-t-lg animate-in slide-in-from-bottom-2 duration-200">
+          <div className="flex-1 min-w-0">
+            <p className="text-[10px] font-bold text-[#ba0b0b] uppercase tracking-wider">Replying to {replyTo.senderName}</p>
+            <p className="text-xs text-muted-foreground truncate">{replyTo.content}</p>
+          </div>
+          <Button
+            type="button"
+            variant="ghost"
+            size="icon"
+            className="h-6 w-6 rounded-full"
+            onClick={() => setReplyTo(null)}
+          >
+            <X size={12} />
+          </Button>
+        </div>
+      )}
+
       {attachments.length > 0 && (
         <div className="flex flex-wrap gap-2 p-2 border border-dashed border-border rounded-lg">
           {attachments.map((attachment) => (

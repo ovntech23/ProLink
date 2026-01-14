@@ -3,7 +3,8 @@ const router = express.Router();
 const {
   sendMessage,
   getMessages,
-  markAsRead
+  markAsRead,
+  addReaction
 } = require('../controllers/messageController');
 const { protect } = require('../middleware/auth');
 
@@ -15,5 +16,8 @@ router.get('/', protect, getMessages);
 
 // Mark a message as read
 router.put('/:id/read', protect, markAsRead);
+
+// Add reaction to message
+router.post('/:id/react', protect, addReaction);
 
 module.exports = router;

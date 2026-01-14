@@ -78,6 +78,12 @@ export interface Message {
   timestamp: string;
   read: boolean;
   attachments?: Attachment[];
+  reactions?: { user: string; emoji: string }[];
+  replyTo?: {
+    messageId: string;
+    content: string;
+    senderName: string;
+  } | null;
 }
 
 export interface Attachment {
@@ -97,6 +103,7 @@ interface AppState {
   payments: Payment[];
   messages: Message[];
   onlineUsers: string[];
+  replyTo: Message['replyTo'] | null;
   login: (email: string, password: string) => Promise<User | null>;
   logout: () => void;
   addShipment: (shipment: Omit<Shipment, 'id' | 'trackingId' | 'statusHistory'>) => Promise<Shipment>;
@@ -113,6 +120,8 @@ interface AppState {
   signUp: (user: Omit<User, 'id' | 'isApproved'> & { password: string }) => Promise<User>;
   reportShipmentIncident: (shipmentId: string, note: string) => void;
   sendMessage: (recipientId: string, content: string, attachments?: Attachment[]) => void;
+  addReaction: (messageId: string, emoji: string) => Promise<void>;
+  setReplyTo: (reply: Message['replyTo'] | null) => void;
   getMessagesBetweenUsers: (userId1: string, userId2: string) => Message[];
   getUnreadMessages: (userId: string) => Message[];
   markMessageAsRead: (messageId: string) => void;
@@ -136,6 +145,7 @@ export const useStore = create<AppState>((set, get) => ({
   payments: [],
   messages: [],
   onlineUsers: [],
+  replyTo: null,
 
   // Initialize store with data from API
   init: async () => {
@@ -157,7 +167,9 @@ export const useStore = create<AppState>((set, get) => ({
             id: m._id || m.id,
             senderId: m.sender?._id || m.sender?.id || m.sender,
             recipientId: m.recipient?._id || m.recipient?.id || m.recipient,
-            timestamp: m.createdAt || m.timestamp
+            timestamp: m.createdAt || m.timestamp,
+            reactions: m.reactions || [],
+            replyTo: m.replyTo
           }))
         }
       ];
@@ -606,26 +618,74 @@ export const useStore = create<AppState>((set, get) => ({
   },
 
   sendMessage: (recipientId, content, attachments) => {
-    const { currentUser } = get();
+    const { currentUser, replyTo } = get();
     if (!currentUser) return;
 
-    // Send message through WebSocket
-    const messageData = {
-      id: Math.random().toString(36).substr(2, 9),
+    const messagePayload = {
+      recipientId,
+      content,
+      attachments,
+      replyTo // Include reply context if active
+    };
+
+    // Send via socket for real-time delivery
+    sendSocketMessage('sendMessage', messagePayload);
+
+    // Optimistically update local message list for better UX
+    const optimisticMessage: Message = {
+      id: `opt-${Date.now()}`,
       senderId: currentUser.id,
       recipientId,
       content,
       timestamp: new Date().toISOString(),
       read: false,
-      attachments
+      attachments,
+      replyTo,
+      reactions: []
     };
 
-    // Send through WebSocket
-    sendSocketMessage(messageData);
-
-    // Add to local state
-    set(state => ({ messages: [...state.messages, messageData] }));
+    set((state) => ({
+      messages: [...state.messages, optimisticMessage],
+      replyTo: null // Clear reply context after sending
+    }));
   },
+
+  addReaction: async (messageId, emoji) => {
+    const { currentUser } = get();
+    if (!currentUser) return;
+
+    // Optimistically update reactions
+    set(state => ({
+      messages: state.messages.map(m => {
+        if (m.id === messageId) {
+          const reactions = m.reactions || [];
+          const existingIndex = reactions.findIndex(
+            r => r.user === currentUser.id && r.emoji === emoji
+          );
+
+          if (existingIndex > -1) {
+            // Remove
+            const newReactions = [...reactions];
+            newReactions.splice(existingIndex, 1);
+            return { ...m, reactions: newReactions };
+          } else {
+            // Add
+            return { ...m, reactions: [...reactions, { user: currentUser.id, emoji }] };
+          }
+        }
+        return m;
+      })
+    }));
+
+    try {
+      await messageApi.addReaction(messageId, emoji);
+    } catch (error) {
+      console.error('Failed to add reaction:', error);
+      // Rollback on error if necessary
+    }
+  },
+
+  setReplyTo: (reply) => set({ replyTo: reply }),
 
   getMessagesBetweenUsers: (userId1, userId2) => {
     const state = get();
@@ -838,7 +898,9 @@ export const useStore = create<AppState>((set, get) => ({
         content: message.content,
         timestamp: message.timestamp || message.createdAt,
         read: message.read,
-        attachments: message.attachments
+        attachments: message.attachments,
+        reactions: message.reactions || [],
+        replyTo: message.replyTo
       };
 
       // Ignore messages sent by current user to avoid duplication with optimistic updates
@@ -868,6 +930,16 @@ export const useStore = create<AppState>((set, get) => ({
           }
         }
       });
+    });
+
+    // Listen for message reaction events
+    socket.on('messageReaction', (data: { messageId: string; reactions: any[] }) => {
+      console.log('Received messageReaction:', data);
+      set(state => ({
+        messages: state.messages.map(m =>
+          m.id === data.messageId ? { ...m, reactions: data.reactions } : m
+        )
+      }));
     });
 
     // Listen for message read events
