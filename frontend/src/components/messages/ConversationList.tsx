@@ -1,5 +1,5 @@
 import type { User } from '../../store/useStore';
-import { Avatar, AvatarFallback } from '../ui/avatar';
+import { Avatar, AvatarFallback, AvatarImage } from '../ui/avatar';
 
 interface Conversation {
   user: User;
@@ -52,6 +52,7 @@ export const ConversationList = ({ conversations, onSelectUser, currentUser, onl
                 <div className="flex items-center gap-3">
                   <div className="relative">
                     <Avatar>
+                      <AvatarImage src={user.avatar} alt={user.name} className="object-cover" />
                       <AvatarFallback className="bg-[#ba0b0b] text-white">
                         {user.name.charAt(0)}
                       </AvatarFallback>

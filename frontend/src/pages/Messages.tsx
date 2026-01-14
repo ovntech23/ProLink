@@ -8,7 +8,7 @@ import { ArrowLeft, Plus } from 'lucide-react';
 import type { User } from '../store/useStore';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from '../components/ui/dialog';
 import { Button } from '../components/ui/button';
-import { Avatar, AvatarFallback } from '../components/ui/avatar';
+import { Avatar, AvatarFallback, AvatarImage } from '../components/ui/avatar';
 
 export const MessagesPage = () => {
   const { currentUser, users, onlineUsers, getConversations, getMessagesBetweenUsers, markMessageAsRead, sendMessage, messages } = useStore();
@@ -106,6 +106,12 @@ export const MessagesPage = () => {
             <button onClick={() => setSelectedUser(null)} className="p-1 hover:bg-muted rounded">
               <ArrowLeft size={20} />
             </button>
+            <Avatar>
+              <AvatarImage src={selectedUser.avatar} alt={selectedUser.name} className="object-cover" />
+              <AvatarFallback className="bg-[#ba0b0b] text-white">
+                {selectedUser.name.charAt(0)}
+              </AvatarFallback>
+            </Avatar>
             <div>
               <h3 className="font-semibold text-foreground">{selectedUser.name}</h3>
               <p className="text-sm text-muted-foreground capitalize">{selectedUser.role}</p>
@@ -113,7 +119,13 @@ export const MessagesPage = () => {
           </div>
           <div className="flex-1 overflow-y-auto p-4 space-y-4">
             {localMessages.map((message) => (
-              <MessageBubble key={message.id} message={message} isCurrentUser={message.senderId === currentUser.id} />
+              <MessageBubble
+                key={message.id}
+                message={message}
+                isCurrentUser={message.senderId === currentUser.id}
+                senderAvatar={message.senderId === currentUser.id ? currentUser.avatar : selectedUser.avatar}
+                senderName={message.senderId === currentUser.id ? currentUser.name : selectedUser.name}
+              />
             ))}
           </div>
           <div className="p-4 border-t border-border">
@@ -143,6 +155,7 @@ export const MessagesPage = () => {
                       <div key={user.id} className="p-3 hover:bg-muted cursor-pointer rounded-lg transition-colors" onClick={() => handleSelectNewUser(user)} >
                         <div className="flex items-center gap-3">
                           <Avatar>
+                            <AvatarImage src={user.avatar} alt={user.name} className="object-cover" />
                             <AvatarFallback className="bg-[#ba0b0b] text-white">
                               {user.name.charAt(0)}
                             </AvatarFallback>
@@ -187,6 +200,7 @@ export const MessagesPage = () => {
                       <div key={user.id} className="p-3 hover:bg-muted cursor-pointer rounded-lg transition-colors" onClick={() => handleSelectNewUser(user)} >
                         <div className="flex items-center gap-3">
                           <Avatar>
+                            <AvatarImage src={user.avatar} alt={user.name} className="object-cover" />
                             <AvatarFallback className="bg-[#ba0b0b] text-white">
                               {user.name.charAt(0)}
                             </AvatarFallback>
@@ -210,13 +224,27 @@ export const MessagesPage = () => {
         <div className="flex-1 flex flex-col">
           {selectedUser ? (
             <>
-              <div className="p-4 border-b border-border bg-muted">
-                <h3 className="font-semibold text-foreground">{selectedUser.name}</h3>
-                <p className="text-sm text-muted-foreground capitalize">{selectedUser.role}</p>
+              <div className="p-4 border-b border-border bg-muted flex items-center gap-3">
+                <Avatar>
+                  <AvatarImage src={selectedUser.avatar} alt={selectedUser.name} className="object-cover" />
+                  <AvatarFallback className="bg-[#ba0b0b] text-white">
+                    {selectedUser.name.charAt(0)}
+                  </AvatarFallback>
+                </Avatar>
+                <div>
+                  <h3 className="font-semibold text-foreground">{selectedUser.name}</h3>
+                  <p className="text-sm text-muted-foreground capitalize">{selectedUser.role}</p>
+                </div>
               </div>
               <div className="flex-1 overflow-y-auto p-4 space-y-4">
                 {localMessages.map((message) => (
-                  <MessageBubble key={message.id} message={message} isCurrentUser={message.senderId === currentUser.id} />
+                  <MessageBubble
+                    key={message.id}
+                    message={message}
+                    isCurrentUser={message.senderId === currentUser.id}
+                    senderAvatar={message.senderId === currentUser.id ? currentUser.avatar : selectedUser.avatar}
+                    senderName={message.senderId === currentUser.id ? currentUser.name : selectedUser.name}
+                  />
                 ))}
               </div>
               <div className="p-4 border-t border-border">
