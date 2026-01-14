@@ -46,10 +46,18 @@ const registerUser = async (req, res) => {
 
 // @desc    Get all users
 // @route   GET /api/users
-// @access  Public
+// @access  Public (Protected by middleware)
 const getUsers = async (req, res) => {
   try {
-    const users = await User.find({}).select('-vehicleImage');
+    let query = {};
+
+    // Role-based filtering
+    if (req.user && ['driver', 'owner'].includes(req.user.role)) {
+      // Drivers and Owners can only see Admins and Brokers
+      query = { role: { $in: ['admin', 'broker'] } };
+    }
+
+    const users = await User.find(query).select('-vehicleImage');
     res.json(users);
   } catch (error) {
     console.error(error);
