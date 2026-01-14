@@ -6,6 +6,18 @@ const conversationSchema = new mongoose.Schema({
     ref: 'User',
     required: true
   }],
+  isGroup: {
+    type: Boolean,
+    default: false
+  },
+  name: {
+    type: String,
+    trim: true
+  },
+  groupAdmin: {
+    type: mongoose.Schema.Types.ObjectId,
+    ref: 'User'
+  },
   createdAt: {
     type: Date,
     default: Date.now

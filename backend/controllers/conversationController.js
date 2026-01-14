@@ -111,6 +111,58 @@ const startConversation = async (req, res) => {
   }
 };
 
+// @desc    Create a group conversation
+// @route   POST /api/conversations/group
+// @access  Private (Admin only)
+const createGroupConversation = async (req, res) => {
+  try {
+    const { name, participants } = req.body;
+
+    // Validate input
+    if (!name || !participants || !Array.isArray(participants) || participants.length === 0) {
+      return res.status(400).json({ message: 'Name and participants array are required' });
+    }
+
+    // Verify all participants exist
+    const validParticipants = await User.find({ _id: { $in: participants } });
+    if (validParticipants.length !== participants.length) {
+      return res.status(400).json({ message: 'One or more participants not found' });
+    }
+
+    // Add current user (admin) to participants if not already included
+    const participantIds = participants.map(p => p.toString());
+    if (!participantIds.includes(req.user.id.toString())) {
+      participantIds.push(req.user.id.toString());
+    }
+
+    // Create new group conversation
+    const conversation = new Conversation({
+      participants: participantIds,
+      isGroup: true,
+      name,
+      groupAdmin: req.user.id
+    });
+
+    const savedConversation = await conversation.save();
+
+    // Populate participants
+    await savedConversation.populate('participants', 'name email role');
+
+    // Invalidate cache for all participants
+    for (const participantId of participantIds) {
+      await invalidateConversationCache(participantId);
+    }
+
+    res.status(201).json({
+      conversation: savedConversation,
+      message: 'Group conversation created successfully'
+    });
+  } catch (error) {
+    console.error(error);
+    res.status(500).json({ message: 'Server error' });
+  }
+};
+
 // @desc    Get messages in a conversation
 // @route   GET /api/conversations/:id/messages
 // @access  Private
@@ -163,5 +215,6 @@ const getMessages = async (req, res) => {
 module.exports = {
   getConversations,
   startConversation,
+  createGroupConversation,
   getMessages
 };

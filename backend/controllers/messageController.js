@@ -23,6 +23,9 @@ const sendMessage = async (req, res) => {
       return res.status(400).json({ message: 'Message content is required' });
     }
 
+    const senderRole = req.user.role;
+    const isRestrictedRole = ['driver', 'owner'].includes(senderRole);
+
     let conversation;
     if (conversationId) {
       // Use existing conversation
@@ -30,11 +33,32 @@ const sendMessage = async (req, res) => {
       if (!conversation) {
         return res.status(404).json({ message: 'Conversation not found' });
       }
+
+      // Check restrictions for existing 1-on-1 conversations
+      if (isRestrictedRole && !conversation.isGroup) {
+        // Find the other participant
+        const otherParticipantId = conversation.participants.find(p => p.toString() !== req.user.id.toString());
+        const otherParticipant = await User.findById(otherParticipantId);
+
+        if (otherParticipant && ['driver', 'owner'].includes(otherParticipant.role)) {
+          // If both are restricted roles (driver/owner) and it's not a group, deny.
+          // Note: This blocks existing conversations too if they exist.
+          return res.status(403).json({ message: 'You are not allowed to message this user directly.' });
+        }
+      }
     } else if (recipientId) {
       // Check if recipient exists
       const recipient = await User.findById(recipientId);
       if (!recipient) {
         return res.status(404).json({ message: 'Recipient not found' });
+      }
+
+      // Check restrictions for new/direct messages
+      if (isRestrictedRole) {
+        const recipientRole = recipient.role;
+        if (['driver', 'owner'].includes(recipientRole)) {
+          return res.status(403).json({ message: 'You are not allowed to message this user directly.' });
+        }
       }
 
       // Check if conversation already exists between these users
