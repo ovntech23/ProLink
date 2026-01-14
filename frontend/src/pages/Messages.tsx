@@ -6,7 +6,7 @@ import { ConversationList } from '../components/messages/ConversationList';
 import { useIsMobile } from '../hooks/use-mobile';
 import { ArrowLeft, Plus } from 'lucide-react';
 import type { User } from '../store/useStore';
-import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from '../components/ui/dialog';
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger, DialogDescription } from '../components/ui/dialog';
 import { Button } from '../components/ui/button';
 import { Avatar, AvatarFallback, AvatarImage } from '../components/ui/avatar';
 
@@ -178,6 +178,7 @@ export const MessagesPage = () => {
                 <DialogContent>
                   <DialogHeader>
                     <DialogTitle>New Message</DialogTitle>
+                    <DialogDescription className="sr-only">Select a user to start a conversation</DialogDescription>
                   </DialogHeader>
                   <div className="max-h-96 overflow-y-auto">
                     {availableUsers.map((user) => (
