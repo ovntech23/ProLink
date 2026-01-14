@@ -214,9 +214,21 @@ export const useStore = create<AppState>((set, get) => ({
 
       const newState: any = {};
       results.forEach((result, index) => {
-        const opName = activeOps[index].name;
+        const op = activeOps[index];
+        const opName = op.name;
+
         if (result.status === 'fulfilled') {
-          newState[opName] = activeOps[index].mapper(result.value.data);
+          const responseData = result.value.data;
+          // Robustness check: Ensure result.value.data is an array before mapping
+          if (Array.isArray(responseData)) {
+            newState[opName] = op.mapper(responseData);
+          } else if (responseData && typeof responseData === 'object' && Array.isArray((responseData as any).data)) {
+            // Support for { success: true, data: [...] } format just in case
+            newState[opName] = op.mapper((responseData as any).data);
+          } else {
+            console.warn(`Unexpected data format for ${opName}:`, responseData);
+            newState[opName] = [];
+          }
         } else {
           console.warn(`Failed to fetch ${opName}:`, result.reason);
           newState[opName] = [];

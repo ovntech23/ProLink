@@ -9,10 +9,7 @@ const getJobs = async (req, res) => {
             .populate('postedBy', 'name avatar')
             .sort('-createdAt');
 
-        res.status(200).json({
-            success: true,
-            data: jobs
-        });
+        res.status(200).json(jobs);
     } catch (error) {
         res.status(500).json({ message: error.message });
     }
@@ -42,10 +39,7 @@ const createJob = async (req, res) => {
             req.app.get('io').emit('jobCreated', populatedJob);
         }
 
-        res.status(201).json({
-            success: true,
-            data: populatedJob
-        });
+        res.status(201).json(populatedJob);
     } catch (error) {
         res.status(400).json({ message: error.message });
     }
@@ -85,10 +79,7 @@ const reactToJob = async (req, res) => {
             });
         }
 
-        res.status(200).json({
-            success: true,
-            data: job.reactions
-        });
+        res.status(200).json(job.reactions);
     } catch (error) {
         res.status(400).json({ message: error.message });
     }
@@ -122,10 +113,7 @@ const updateJobStatus = async (req, res) => {
             });
         }
 
-        res.status(200).json({
-            success: true,
-            data: job
-        });
+        res.status(200).json(job);
     } catch (error) {
         res.status(400).json({ message: error.message });
     }
