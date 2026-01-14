@@ -55,8 +55,9 @@ export const Sidebar = ({ isOpen, onClose }: SidebarProps) => {
   };
 
   const roleLinks = links[currentUser.role] || [];
-  const conversations = useStore(state => state.getConversations(currentUser.id));
-  const totalUnread = conversations.reduce((sum, conv) => sum + conv.unreadCount, 0);
+  const totalUnread = useStore(state =>
+    state.messages.filter(m => m.recipientId === currentUser.id && !m.read).length
+  );
   const messagesPath = `/${currentUser.role}/messages`;
 
   return (

@@ -643,17 +643,20 @@ export const useStore = create<AppState>((set, get) => ({
   },
 
   markMessageAsRead: async (messageId) => {
+    // 1. Optimistically update store to break potential re-render loops
+    set(state => ({
+      messages: state.messages.map(m =>
+        m.id === messageId
+          ? { ...m, read: true }
+          : m
+      )
+    }));
+
     try {
       await messageApi.markAsRead(messageId);
-      set(state => ({
-        messages: state.messages.map(m =>
-          m.id === messageId
-            ? { ...m, read: true }
-            : m
-        )
-      }));
     } catch (error) {
       console.error('Failed to mark message as read:', error);
+      // Optional: Rollback if necessary, but for read receipts it's usually fine
     }
   },
 
