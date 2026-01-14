@@ -90,6 +90,7 @@ export interface Attachment {
 
 interface AppState {
   currentUser: User | null;
+  isAuthChecking: boolean;
   users: User[];
   drivers: DriverProfile[];
   shipments: Shipment[];
@@ -128,6 +129,7 @@ interface AppState {
 
 export const useStore = create<AppState>((set, get) => ({
   currentUser: null,
+  isAuthChecking: true,
   users: [],
   drivers: [],
   shipments: [],
@@ -228,8 +230,8 @@ export const useStore = create<AppState>((set, get) => ({
         })
       } as User;
 
-      // Set current user
-      set({ currentUser: user });
+      // Set current user and mark auth check as complete
+      set({ currentUser: user, isAuthChecking: false });
 
       // Initialize WebSocket connection with token
       initSocket(response.data.token);
@@ -254,7 +256,10 @@ export const useStore = create<AppState>((set, get) => ({
 
   checkAuth: async () => {
     const token = localStorage.getItem('token');
-    if (!token) return;
+    if (!token) {
+      set({ isAuthChecking: false });
+      return;
+    }
 
     try {
       const response = await userApi.getCurrentUser();
@@ -280,7 +285,7 @@ export const useStore = create<AppState>((set, get) => ({
         })
       } as User;
 
-      set({ currentUser: user });
+      set({ currentUser: user, isAuthChecking: false });
       initSocket(token);
 
       // Setup online users listener
@@ -296,7 +301,7 @@ export const useStore = create<AppState>((set, get) => ({
     } catch (error) {
       console.error('Auth check failed:', error);
       localStorage.removeItem('token');
-      set({ currentUser: null });
+      set({ currentUser: null, isAuthChecking: false });
     }
   },
 
