@@ -240,5 +240,6 @@ const markAsRead = async (req, res) => {
 module.exports = {
   sendMessage,
   getMessages,
-  markAsRead
+  markAsRead,
+  addReaction
 };
