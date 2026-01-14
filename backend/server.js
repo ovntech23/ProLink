@@ -432,13 +432,15 @@ const setupChangeStreams = () => {
       switch (change.operationType) {
         case 'insert':
           action = 'create';
-          data = { id: change.fullDocument._id, ...change.fullDocument };
+          const { vehicleImage, password, ...cleanDoc } = change.fullDocument;
+          data = { id: cleanDoc._id, ...cleanDoc };
           io.emit('shipmentCreated', data);
           break;
         case 'update':
         case 'replace':
           action = 'update';
-          data = { id: change.documentKey._id, ...change.fullDocument };
+          const { vehicleImage, password, ...cleanUpdate } = change.fullDocument;
+          data = { id: change.documentKey._id, ...cleanUpdate };
           io.emit('shipmentUpdate', data);
           break;
         case 'delete':
@@ -472,13 +474,15 @@ const setupChangeStreams = () => {
       switch (change.operationType) {
         case 'insert':
           action = 'create';
-          data = { id: change.fullDocument._id, ...change.fullDocument };
+          const { vehicleImage, password, ...cleanUserDoc } = change.fullDocument;
+          data = { id: cleanUserDoc._id, ...cleanUserDoc };
           io.emit('userCreated', data);
           break;
         case 'update':
         case 'replace':
           action = 'update';
-          data = { id: change.documentKey._id, ...change.fullDocument };
+          const { vehicleImage, password, ...cleanUserUpdate } = change.fullDocument;
+          data = { id: change.documentKey._id, ...cleanUserUpdate };
           io.emit('userUpdate', data);
           break;
         case 'delete':

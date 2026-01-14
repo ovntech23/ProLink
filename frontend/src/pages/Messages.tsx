@@ -18,40 +18,32 @@ export const MessagesPage = () => {
   const [isNewMessageOpen, setIsNewMessageOpen] = useState(false);
   const isMobile = useIsMobile();
 
-  // Update conversations and messages when store changes
+  // Synchronize local messages and conversations with the global store
   useEffect(() => {
-    if (currentUser) {
-      // Update conversations
-      const userConversations = getConversations(currentUser.id);
-      setConversations(userConversations);
+    if (!currentUser) return;
 
-      // If there's a selected user, update messages
-      if (selectedUser) {
-        const userMessages = getMessagesBetweenUsers(currentUser.id, selectedUser.id);
-        setLocalMessages(userMessages);
+    // 1. Update conversations list
+    const userConversations = getConversations(currentUser.id);
+    setConversations(userConversations);
 
-        // Mark messages as read
-        userMessages
-          .filter(m => m.recipientId === currentUser.id && !m.read)
-          .forEach(m => markMessageAsRead(m.id));
-      }
-    }
-  }, [currentUser, selectedUser, getConversations, getMessagesBetweenUsers, markMessageAsRead]);
-
-  // Listen for real-time message updates
-  useEffect(() => {
-    // This effect will run whenever the messages in the store change
-    // The store's sendMessage function now uses WebSockets, so messages
-    // will be updated in real-time
-    if (currentUser && selectedUser) {
+    // 2. If a user is selected, update the thread
+    if (selectedUser) {
       const userMessages = getMessagesBetweenUsers(currentUser.id, selectedUser.id);
       setLocalMessages(userMessages);
 
-      // Update conversations as well since last message might have changed
-      const userConversations = getConversations(currentUser.id);
-      setConversations(userConversations);
+      // 3. Mark unread messages as read (only those sent TO me)
+      const unreadMessages = userMessages.filter(
+        m => m.recipientId === currentUser.id && !m.read
+      );
+
+      if (unreadMessages.length > 0) {
+        // Mark as read in the background without triggering an immediate local update loop
+        // The store update will eventually trigger a single re-sync via the messages dependency
+        unreadMessages.forEach(m => markMessageAsRead(m.id));
+      }
     }
-  }, [currentUser, selectedUser, getMessagesBetweenUsers, getConversations, messages]);
+  }, [currentUser, selectedUser, messages, getConversations, getMessagesBetweenUsers]);
+  // Dependency on 'messages' ensures real-time updates from store are reflected here
 
   const handleSelectUser = (user: User) => {
     setSelectedUser(user);
@@ -81,16 +73,8 @@ export const MessagesPage = () => {
   const handleSendMessage = (content: string, attachments?: any[]) => {
     if (!currentUser || !selectedUser) return;
 
-    // Send message through store
+    // Send message through store - store update will trigger useEffect re-sync via 'messages' dependency
     sendMessage(selectedUser.id, content, attachments);
-
-    // Refresh messages and conversations
-    if (currentUser) {
-      const userMessages = getMessagesBetweenUsers(currentUser.id, selectedUser.id);
-      setLocalMessages(userMessages);
-      const updatedConversations = getConversations(currentUser.id);
-      setConversations(updatedConversations);
-    }
   };
 
   if (!currentUser) {

@@ -271,8 +271,8 @@ const updateUserProfile = async (req, res) => {
             id: updatedUser._id,
             status: updatedUser.status,
             currentLocation: updatedUser.currentLocation,
-            avatar: updatedUser.avatar,
-            vehicleImage: updatedUser.vehicleImage
+            avatar: updatedUser.avatar
+            // vehicleImage excluded for stability
           });
         }
       }
