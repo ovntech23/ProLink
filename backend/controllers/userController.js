@@ -359,13 +359,30 @@ const loginUser = async (req, res) => {
       const token = generateToken(user._id);
       console.log('✅ Login successful for user:', user.email);
 
-      res.json({
+      // Return user data with all fields
+      const userData = {
         _id: user._id,
         name: user.name,
         email: user.email,
         role: user.role,
+        avatar: user.avatar,
+        phone: user.phone,
         token
-      });
+      };
+
+      // Include driver-specific fields if role is driver
+      if (user.role === 'driver') {
+        userData.status = user.status;
+        userData.vehicleType = user.vehicleType;
+        userData.vehiclePlate = user.vehiclePlate;
+        userData.vehicleImage = user.vehicleImage;
+        userData.trailerPlate = user.trailerPlate;
+        userData.vehicleCategory = user.vehicleCategory;
+        userData.vehicleModel = user.vehicleModel;
+        userData.currentLocation = user.currentLocation;
+      }
+
+      res.json(userData);
     } else {
       console.log('❌ Invalid credentials for user:', user.email);
       res.status(401).json({ message: 'Invalid email or password' });

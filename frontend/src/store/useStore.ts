@@ -205,13 +205,27 @@ export const useStore = create<AppState>((set, get) => ({
       // Store token in localStorage
       localStorage.setItem('token', response.data.token);
 
-      // Create user object from response.user
+      // Create user object from response.user with all fields
+      const responseData = response.data as any; // Type assertion for additional fields
       const user = {
-        id: response.data._id,
-        name: response.data.name,
-        email: response.data.email,
-        role: response.data.role,
-        isApproved: true // Assume approved for login
+        id: responseData._id,
+        name: responseData.name,
+        email: responseData.email,
+        role: responseData.role,
+        avatar: responseData.avatar,
+        phone: responseData.phone,
+        isApproved: true, // Assume approved for login
+        // Include driver-specific fields if role is driver
+        ...(responseData.role === 'driver' && {
+          status: responseData.status,
+          vehicleType: responseData.vehicleType,
+          vehiclePlate: responseData.vehiclePlate,
+          vehicleImage: responseData.vehicleImage,
+          trailerPlate: responseData.trailerPlate,
+          vehicleCategory: responseData.vehicleCategory,
+          vehicleModel: responseData.vehicleModel,
+          currentLocation: responseData.currentLocation
+        })
       } as User;
 
       // Set current user
@@ -244,12 +258,26 @@ export const useStore = create<AppState>((set, get) => ({
 
     try {
       const response = await userApi.getCurrentUser();
+      const responseData = response.data as any; // Type assertion for additional fields
       const user = {
-        id: response.data._id,
-        name: response.data.name,
-        email: response.data.email,
-        role: response.data.role,
-        isApproved: true
+        id: responseData._id,
+        name: responseData.name,
+        email: responseData.email,
+        role: responseData.role,
+        avatar: responseData.avatar,
+        phone: responseData.phone,
+        isApproved: true,
+        // Include driver-specific fields if role is driver
+        ...(responseData.role === 'driver' && {
+          status: responseData.status,
+          vehicleType: responseData.vehicleType,
+          vehiclePlate: responseData.vehiclePlate,
+          vehicleImage: responseData.vehicleImage,
+          trailerPlate: responseData.trailerPlate,
+          vehicleCategory: responseData.vehicleCategory,
+          vehicleModel: responseData.vehicleModel,
+          currentLocation: responseData.currentLocation
+        })
       } as User;
 
       set({ currentUser: user });
