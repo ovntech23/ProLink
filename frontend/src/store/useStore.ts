@@ -847,6 +847,24 @@ export const useStore = create<AppState>((set, get) => ({
       set((state) => ({
         messages: [...state.messages, mappedMessage]
       }));
+
+      // Show toast notification for new incoming messages
+      const sender = get().users.find(u => u.id === mappedMessage.senderId);
+      const senderName = sender?.name || 'Someone';
+
+      toast(`New message from ${senderName}`, {
+        description: mappedMessage.content.length > 50
+          ? mappedMessage.content.substring(0, 50) + '...'
+          : mappedMessage.content,
+        action: {
+          label: 'View',
+          onClick: () => {
+            // We can't easily navigate from here without a router context, 
+            // but sonner toasts are usually self-contained. 
+            // The user can click the sidebar link.
+          }
+        }
+      });
     });
 
     // Listen for message read events

@@ -1,6 +1,7 @@
 import { LayoutDashboard, Truck, Package, UserCircle, LogOut, PlusCircle, CreditCard, X, UserCheck, MessageCircle, Users } from 'lucide-react';
 import { NavLink, useNavigate } from 'react-router-dom';
 import { useStore } from '../../store/useStore';
+import { Badge } from '../ui/badge';
 import clsx from 'clsx';
 import prolinkLogo from '../../assets/prolink logo.png';
 
@@ -54,6 +55,9 @@ export const Sidebar = ({ isOpen, onClose }: SidebarProps) => {
   };
 
   const roleLinks = links[currentUser.role] || [];
+  const conversations = useStore(state => state.getConversations(currentUser.id));
+  const totalUnread = conversations.reduce((sum, conv) => sum + conv.unreadCount, 0);
+  const messagesPath = `/${currentUser.role}/messages`;
 
   return (
     <>
@@ -94,7 +98,7 @@ export const Sidebar = ({ isOpen, onClose }: SidebarProps) => {
             <NavLink
               key={link.to}
               to={link.to}
-              end={link.to === '/broker'}
+              end={link.to === '/broker' || link.to === '/admin'}
               onClick={() => {
                 if (window.innerWidth < 1024) onClose();
               }}
@@ -108,7 +112,14 @@ export const Sidebar = ({ isOpen, onClose }: SidebarProps) => {
               }
             >
               <link.icon size={20} />
-              <span className="font-medium">{link.label}</span>
+              <div className="flex-1 flex items-center justify-between">
+                <span className="font-medium">{link.label}</span>
+                {link.to === messagesPath && totalUnread > 0 && (
+                  <Badge className="bg-white text-[#ba0b0b] hover:bg-white border-none h-5 min-w-[20px] px-1.5 flex items-center justify-center font-bold">
+                    {totalUnread}
+                  </Badge>
+                )}
+              </div>
             </NavLink>
           ))}
         </nav>
