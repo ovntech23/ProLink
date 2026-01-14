@@ -53,7 +53,7 @@ const registerUser = async (req, res) => {
 // @access  Public
 const getUsers = async (req, res) => {
   try {
-    const users = await User.find({}).select('-avatar -vehicleImage');
+    const users = await User.find({}).select('-vehicleImage');
     res.json(users);
   } catch (error) {
     console.error(error);
