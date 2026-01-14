@@ -1,6 +1,7 @@
 import { create } from 'zustand';
 import { driverApi, authApi, userApi, shipmentApi, paymentApi, messageApi } from '../lib/api';
 import { initSocket, sendSocketMessage, onOnlineUsersUpdate, disconnectSocket, getSocket } from '../lib/socket';
+import { toast } from 'sonner';
 
 export type UserRole = 'broker' | 'driver' | 'owner';
 
@@ -98,10 +99,10 @@ interface AppState {
   login: (email: string, password: string) => Promise<User | null>;
   logout: () => void;
   addShipment: (shipment: Omit<Shipment, 'id' | 'trackingId' | 'statusHistory'>) => Promise<Shipment>;
-  assignDriver: (shipmentId: string, driverId: string) => void;
-  addDriver: (driver: Omit<DriverProfile, 'id' | 'status' | 'role'>) => void;
-  updateDriverProfile: (driverId: string, updates: Partial<DriverProfile>, comment?: string) => void;
-  updateShipmentStatus: (shipmentId: string, status: Shipment['status'], note?: string) => void;
+  assignDriver: (shipmentId: string, driverId: string) => Promise<void>;
+  addDriver: (driver: Omit<DriverProfile, 'id' | 'status' | 'role'>) => Promise<void>;
+  updateDriverProfile: (driverId: string, updates: Partial<DriverProfile>, comment?: string) => Promise<void>;
+  updateShipmentStatus: (shipmentId: string, status: Shipment['status'], note?: string) => Promise<void>;
   addPayment: (payment: Omit<Payment, 'id'>) => void;
   updatePaymentStatus: (paymentId: string, status: Payment['status']) => void;
   approveUser: (userId: string) => void;
@@ -143,8 +144,11 @@ export const useStore = create<AppState>((set, get) => ({
       let messages = [];
 
       try {
+        console.log('Fetching drivers...');
         const { data: driversData } = await driverApi.getDrivers();
+        console.log('Drivers received:', driversData);
         drivers = driversData.map((d: any) => ({ ...d, id: d._id }));
+        console.log('Mapped drivers:', drivers);
       } catch (error) {
         console.warn('Failed to fetch drivers:', error);
       }
@@ -298,98 +302,129 @@ export const useStore = create<AppState>((set, get) => ({
     }
   },
 
-  assignDriver: (shipmentId, driverId) => {
-    set(state => ({
-      shipments: state.shipments.map(s =>
-        s.id === shipmentId
-          ? {
-            ...s,
-            driverId,
-            status: 'assigned',
-            statusHistory: [
-              ...s.statusHistory,
-              { status: 'assigned', timestamp: new Date().toISOString(), note: `Driver assigned` }
-            ]
-          }
-          : s
-      )
-    }));
+  assignDriver: async (shipmentId, driverId) => {
+    try {
+      const { data: updatedShipment } = await shipmentApi.updateShipment(shipmentId, {
+        driverId,
+        status: 'assigned',
+      });
+
+      set((state) => ({
+        shipments: state.shipments.map((s) =>
+          s.id === shipmentId ? { ...updatedShipment, id: updatedShipment._id || updatedShipment.id } : s
+        ),
+      }));
+
+      toast.success('Driver assigned successfully');
+    } catch (error) {
+      console.error('Failed to assign driver:', error);
+      toast.error('Failed to assign driver');
+      throw error;
+    }
   },
 
-  addDriver: (data) => {
-    const newDriver: DriverProfile = {
-      ...data,
-      id: `d${Math.floor(1000 + Math.random() * 9000).toString()}`,
-      role: 'driver',
-      status: 'available',
-      isApproved: true
-    };
-    set(state => ({
-      drivers: [...state.drivers, newDriver],
-      users: [...state.users, newDriver]
-    }));
+  addDriver: async (data) => {
+    try {
+      const { data: newDriver } = await userApi.createUser({
+        ...data,
+        role: 'driver',
+        isApproved: true,
+      });
+
+      const mappedDriver: DriverProfile = {
+        ...newDriver,
+        id: newDriver._id,
+        role: 'driver',
+        status: newDriver.status || 'available',
+        isApproved: true
+      };
+
+      set(state => ({
+        drivers: [...state.drivers, mappedDriver],
+        users: [...state.users, mappedDriver]
+      }));
+
+      toast.success('Driver onboarded successfully');
+    } catch (error) {
+      console.error('Failed to onboard driver:', error);
+      toast.error('Failed to onboard driver');
+      throw error;
+    }
   },
 
-  updateDriverProfile: (driverId, updates, comment) => {
-    set(state => {
-      const newDrivers = state.drivers.map(d => d.id === driverId ? { ...d, ...updates } : d);
-      const newUsers = state.users.map(u => u.id === driverId ? { ...u, ...updates } : u);
+  updateDriverProfile: async (driverId, updates, comment) => {
+    try {
+      const { data: updatedDriver } = await driverApi.updateDriverProfile(driverId, updates);
 
-      // Sync location updates to status history of active shipments
-      let newShipments = state.shipments;
-      if (updates.currentLocation) {
-        newShipments = state.shipments.map(s => {
-          if (s.driverId === driverId && (s.status === 'in_transit' || s.status === 'picked_up')) {
-            const historyNote = comment
-              ? `Location update: ${updates.currentLocation} (${comment})`
-              : `Location update: ${updates.currentLocation}`;
-            return {
-              ...s,
-              statusHistory: [
-                ...s.statusHistory,
-                { status: s.status, timestamp: new Date().toISOString(), note: historyNote }
-              ]
-            };
-          }
-          return s;
-        });
+      set(state => {
+        const newDrivers = state.drivers.map(d => d.id === driverId ? { ...updatedDriver, id: updatedDriver._id } : d);
+        const newUsers = state.users.map(u => u.id === driverId ? { ...updatedDriver, id: updatedDriver._id } : u);
+
+        // Sync location updates to status history of active shipments
+        let newShipments = state.shipments;
+        if (updates.currentLocation) {
+          newShipments = state.shipments.map(s => {
+            if (s.driverId === driverId && (s.status === 'in_transit' || s.status === 'picked_up')) {
+              const historyNote = comment
+                ? `Location update: ${updates.currentLocation} (${comment})`
+                : `Location update: ${updates.currentLocation}`;
+              return {
+                ...s,
+                statusHistory: [
+                  ...s.statusHistory,
+                  { status: s.status, timestamp: new Date().toISOString(), note: historyNote }
+                ]
+              };
+            }
+            return s;
+          });
+        }
+
+        return { drivers: newDrivers, users: newUsers, shipments: newShipments };
+      });
+
+      if (comment) {
+        toast.info(comment);
+      } else {
+        toast.success('Profile updated successfully');
       }
-
-      const result = { drivers: newDrivers, users: newUsers, shipments: newShipments };
 
       // Broadcast the update to other clients
       get().broadcastDriverUpdate(driverId, updates);
-
-      return result;
-    });
+    } catch (error) {
+      console.error('Failed to update driver profile:', error);
+      toast.error('Failed to update profile');
+      throw error;
+    }
   },
 
-  updateShipmentStatus: (shipmentId, status, note) => {
-    set(state => {
-      const updatedShipments = state.shipments.map(s =>
-        s.id === shipmentId
-          ? {
-            ...s,
-            status,
-            statusHistory: [
-              ...s.statusHistory,
-              { status, timestamp: new Date().toISOString(), note }
-            ]
-          }
-          : s
-      );
-
-      // Broadcast the update to other clients
-      get().broadcastShipmentUpdate(shipmentId, {
+  updateShipmentStatus: async (shipmentId, status, note) => {
+    try {
+      const { data: updatedShipment } = await shipmentApi.updateShipment(shipmentId, {
         status,
-        statusHistory: [
-          ...state.shipments.find((s: Shipment) => s.id === shipmentId)?.statusHistory || [],
-          { status, timestamp: new Date().toISOString(), note }
-        ]
+        note,
       });
 
-      return { shipments: updatedShipments };
-    });
+      set(state => {
+        const updatedShipments = state.shipments.map(s =>
+          s.id === shipmentId ? { ...updatedShipment, id: updatedShipment._id || updatedShipment.id } : s
+        );
+
+        // Broadcast the update to other clients
+        get().broadcastShipmentUpdate(shipmentId, {
+          status,
+          statusHistory: updatedShipment.statusHistory
+        });
+
+        return { shipments: updatedShipments };
+      });
+
+      toast.success(`Status updated to ${status}`);
+    } catch (error) {
+      console.error('Failed to update shipment status:', error);
+      toast.error('Failed to update status');
+      throw error;
+    }
   },
 
   addPayment: async (payment) => {

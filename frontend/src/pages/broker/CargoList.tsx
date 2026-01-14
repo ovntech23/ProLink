@@ -41,8 +41,8 @@ export const CargoList = () => {
                       {shipment.trackingId}
                     </span>
                     <span className={`text-xs font-semibold px-2 py-1 rounded-full uppercase ${shipment.status === 'delivered'
-                        ? 'bg-emerald-100 text-emerald-700'
-                        : 'bg-amber-100 text-amber-700'
+                      ? 'bg-emerald-100 text-emerald-700'
+                      : 'bg-amber-100 text-amber-700'
                       }`}>
                       {shipment.status.replace('_', ' ')}
                     </span>
@@ -77,14 +77,18 @@ export const CargoList = () => {
                       {assigningId === shipment.id && (
                         <div className="absolute right-0 mt-2 w-64 bg-white rounded-xl shadow-xl border border-slate-100 z-50 py-2">
                           <p className="px-4 py-2 text-xs font-semibold text-slate-400 uppercase tracking-wider">Available Drivers</p>
-                          {drivers.filter(d => d.status === 'available').map(driver => (
+                          {drivers.filter(d => !d.status || d.status === 'available').map(driver => (
                             <Button
                               key={driver.id}
                               variant="ghost"
                               className="w-full px-4 py-2 flex items-center justify-between hover:bg-blue-50 group transition-colors text-left"
-                              onClick={() => {
-                                assignDriver(shipment.id, driver.id);
-                                setAssigningId(null);
+                              onClick={async () => {
+                                try {
+                                  await assignDriver(shipment.id, driver.id);
+                                  setAssigningId(null);
+                                } catch (error) {
+                                  console.error('Failed to assign driver:', error);
+                                }
                               }}
                             >
                               <div className="flex items-center gap-3">
@@ -98,7 +102,7 @@ export const CargoList = () => {
                               </div>
                             </Button>
                           ))}
-                          {drivers.filter(d => d.status === 'available').length === 0 && (
+                          {drivers.filter(d => !d.status || d.status === 'available').length === 0 && (
                             <p className="px-4 py-3 text-sm text-slate-500 italic">No available drivers</p>
                           )}
                         </div>

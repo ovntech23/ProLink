@@ -28,8 +28,8 @@ const userSchema = new mongoose.Schema({
   // Driver-specific fields (only applicable to driver role)
   status: {
     type: String,
-    enum: ['available', 'busy', 'offline']
-    // No default - will be undefined for non-drivers
+    enum: ['available', 'busy', 'offline'],
+    default: 'available'
   },
   vehicleType: {
     type: String
@@ -63,10 +63,10 @@ const userSchema = new mongoose.Schema({
 });
 
 // Hash password before saving
-userSchema.pre('save', async function(next) {
+userSchema.pre('save', async function (next) {
   // Only hash the password if it has been modified (or is new)
   if (!this.isModified('password')) return next();
-  
+
   // Hash the password with a salt round of 10
   const salt = await bcrypt.genSalt(10);
   this.password = await bcrypt.hash(this.password, salt);
