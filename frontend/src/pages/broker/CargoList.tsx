@@ -1,6 +1,6 @@
 import { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { Plus, MapPin, Truck, UserCircle, ChevronDown } from 'lucide-react';
+import { Plus, MapPin, Truck, UserCircle, ChevronDown, Search, X } from 'lucide-react';
 import { useStore } from '../../store/useStore';
 import { Button } from "@/components/ui/button";
 import fleetImage from '../../assets/fleet-delivery-trucks.png';
@@ -9,6 +9,7 @@ export const CargoList = () => {
   const navigate = useNavigate();
   const { shipments, drivers, assignDriver } = useStore();
   const [assigningId, setAssigningId] = useState<string | null>(null);
+  const [driverSearch, setDriverSearch] = useState('');
 
   return (
     <div className="relative min-h-screen">
@@ -75,36 +76,77 @@ export const CargoList = () => {
                         <ChevronDown size={14} className={assigningId === shipment.id ? 'rotate-180 transition-transform' : 'transition-transform'} />
                       </Button>
                       {assigningId === shipment.id && (
-                        <div className="absolute right-0 mt-2 w-64 bg-white rounded-xl shadow-xl border border-slate-100 z-50 py-2">
-                          <p className="px-4 py-2 text-xs font-semibold text-slate-400 uppercase tracking-wider">Available Drivers</p>
-                          {drivers.filter(d => !d.status || d.status === 'available').map(driver => (
-                            <Button
-                              key={driver.id}
-                              variant="ghost"
-                              className="w-full px-4 py-2 flex items-center justify-between hover:bg-blue-50 group transition-colors text-left"
-                              onClick={async () => {
-                                try {
-                                  await assignDriver(shipment.id, driver.id);
-                                  setAssigningId(null);
-                                } catch (error) {
-                                  console.error('Failed to assign driver:', error);
-                                }
-                              }}
-                            >
-                              <div className="flex items-center gap-3">
-                                <div className="w-8 h-8 rounded-full bg-slate-100 flex items-center justify-center text-xs font-bold text-slate-600 group-hover:bg-blue-100 group-hover:text-blue-600">
-                                  {driver.name.charAt(0)}
+                        <div className="absolute right-0 mt-2 w-72 bg-white rounded-xl shadow-2xl border border-slate-200 z-50 overflow-hidden flex flex-col max-h-96">
+                          <div className="p-3 border-b border-slate-100 bg-slate-50/50">
+                            <div className="relative">
+                              <Search size={14} className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-400" />
+                              <input
+                                type="text"
+                                placeholder="Search by name or location..."
+                                className="w-full pl-9 pr-8 py-2 text-sm bg-white border border-slate-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500 transition-all"
+                                value={driverSearch}
+                                onChange={(e) => setDriverSearch(e.target.value)}
+                                autoFocus
+                              />
+                              {driverSearch && (
+                                <button
+                                  onClick={() => setDriverSearch('')}
+                                  className="absolute right-2 top-1/2 -translate-y-1/2 text-slate-400 hover:text-slate-600 p-1"
+                                >
+                                  <X size={12} />
+                                </button>
+                              )}
+                            </div>
+                          </div>
+
+                          <div className="overflow-y-auto flex-1 py-1">
+                            <p className="px-4 py-2 text-[10px] font-bold text-slate-400 uppercase tracking-widest">Available Transporters</p>
+                            {drivers
+                              .filter(d => (!d.status || d.status === 'available') && (
+                                !driverSearch ||
+                                d.name.toLowerCase().includes(driverSearch.toLowerCase()) ||
+                                (d.currentLocation && d.currentLocation.toLowerCase().includes(driverSearch.toLowerCase()))
+                              ))
+                              .map(driver => (
+                                <Button
+                                  key={driver.id}
+                                  variant="ghost"
+                                  className="w-full px-4 py-3 h-auto flex items-center justify-start hover:bg-blue-50 group transition-colors text-left rounded-none border-0"
+                                  onClick={async () => {
+                                    try {
+                                      await assignDriver(shipment.id, driver.id);
+                                      setAssigningId(null);
+                                      setDriverSearch('');
+                                    } catch (error) {
+                                      console.error('Failed to assign driver:', error);
+                                    }
+                                  }}
+                                >
+                                  <div className="flex items-center gap-3 w-full">
+                                    <div className="w-9 h-9 rounded-full bg-slate-100 flex items-center justify-center text-xs font-bold text-slate-600 group-hover:bg-blue-100 group-hover:text-blue-600 shrink-0 transition-colors">
+                                      {driver.name.charAt(0)}
+                                    </div>
+                                    <div className="flex-1 min-w-0">
+                                      <p className="text-sm font-semibold text-slate-900 truncate">{driver.name}</p>
+                                      <div className="flex items-center gap-1.5 mt-0.5">
+                                        <MapPin size={10} className="text-slate-400" />
+                                        <p className="text-[11px] text-slate-500 truncate">{driver.currentLocation || 'Unknown Location'}</p>
+                                      </div>
+                                    </div>
+                                  </div>
+                                </Button>
+                              ))}
+                            {drivers.filter(d => (!d.status || d.status === 'available') && (
+                              !driverSearch ||
+                              d.name.toLowerCase().includes(driverSearch.toLowerCase()) ||
+                              (d.currentLocation && d.currentLocation.toLowerCase().includes(driverSearch.toLowerCase()))
+                            )).length === 0 && (
+                                <div className="px-4 py-8 text-center">
+                                  <Search size={24} className="mx-auto text-slate-200 mb-2" />
+                                  <p className="text-sm text-slate-500 italic">No matching drivers found</p>
                                 </div>
-                                <div>
-                                  <p className="text-sm font-medium text-slate-900">{driver.name}</p>
-                                  <p className="text-xs text-slate-500">{driver.vehicleType}</p>
-                                </div>
-                              </div>
-                            </Button>
-                          ))}
-                          {drivers.filter(d => !d.status || d.status === 'available').length === 0 && (
-                            <p className="px-4 py-3 text-sm text-slate-500 italic">No available drivers</p>
-                          )}
+                              )}
+                          </div>
                         </div>
                       )}
                     </div>
