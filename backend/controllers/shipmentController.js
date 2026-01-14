@@ -9,10 +9,12 @@ const Shipment = require('../models/Shipment');
 // @access  Private
 const getShipments = async (req, res) => {
     try {
+        console.log('GET /api/shipments - Fetching all shipments');
         const shipments = await Shipment.find({});
+        console.log(`Found ${shipments.length} shipments`);
         res.json(shipments);
     } catch (error) {
-        console.error(error);
+        console.error('Error fetching shipments:', error);
         res.status(500).json({ message: 'Server error' });
     }
 };
@@ -22,15 +24,17 @@ const getShipments = async (req, res) => {
 // @access  Private
 const getShipmentById = async (req, res) => {
     try {
+        console.log(`GET /api/shipments/${req.params.id} - Fetching shipment`);
         const shipment = await Shipment.findById(req.params.id);
 
         if (shipment) {
             res.json(shipment);
         } else {
+            console.log(`Shipment ${req.params.id} not found`);
             res.status(404).json({ message: 'Shipment not found' });
         }
     } catch (error) {
-        console.error(error);
+        console.error(`Error fetching shipment ${req.params.id}:`, error);
         res.status(500).json({ message: 'Server error' });
     }
 };
@@ -40,10 +44,12 @@ const getShipmentById = async (req, res) => {
 // @access  Private
 const createShipment = async (req, res) => {
     try {
+        console.log('POST /api/shipments - Creating new shipment:', req.body.trackingId);
         const shipment = await Shipment.create(req.body);
+        console.log('Shipment created successfully:', shipment._id);
         res.status(201).json(shipment);
     } catch (error) {
-        console.error(error);
+        console.error('Error creating shipment:', error);
         res.status(500).json({ message: 'Server error' });
     }
 };

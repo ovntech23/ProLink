@@ -23,49 +23,48 @@ node create-test-user.js
 **Expected output:**
 ```
 ✅ Connected to MongoDB
-✅ Created test user: test@example.com
-✅ User ID: 60f7b3b3c3d9a40015a1f3a1
-✅ Password: password123
+✅ Created test user: <test_email>
+✅ User ID: <user_id>
+✅ Password: <test_password>
 ✅ Role: owner
 ✅ Password verification: SUCCESS
 ✅ JWT token generated successfully
-✅ JWT verification: { userId: '60f7b3b3c3d9a40015a1f3a1', iat: 1623456789, exp: 1624061589 }
-
+✅ JWT verification: { userId: '<user_id>', iat: <timestamp>, exp: <timestamp> }
 🎉 Test user setup complete!
 📝 Login credentials:
-   Email: test@example.com
-   Password: password123
-   Role: owner
+Email: <test_email>
+Password: <test_password>
+Role: owner
 ```
 
 ### Step 2: Test Login with Debug Logs
 
 1. **Restart the backend server** to load the new debugging code:
-   ```bash
-   cd backend
-   npm run dev
-   ```
+```bash
+cd backend
+npm run dev
+```
 
 2. **Open browser developer tools** and go to the Console tab
 
 3. **Try logging in** with the test credentials:
-   - Email: `test@example.com`
-   - Password: `password123`
+   - Email: `<test_email>`
+   - Password: `<test_password>`
 
 4. **Check the backend console** for debug logs. You should see:
-   ```
-   🔍 Login attempt: { email: 'test@example.com', passwordLength: 10 }
-   🔍 User found: YES
-   🔍 User details: { id: '60f7b3b3c3d9a40015a1f3a1', email: 'test@example.com', role: 'owner', hasPassword: true }
-   🔍 Password match: true
-   ✅ Login successful for user: test@example.com
-   ```
+```
+🔍 Login attempt: { email: '<test_email>', passwordLength: <length> }
+🔍 User found: YES
+🔍 User details: { id: '<user_id>', email: '<test_email>', role: 'owner', hasPassword: true }
+🔍 Password match: true
+✅ Login successful for user: <test_email>
+```
 
 5. **Check the frontend console** for debug logs:
-   ```
-   🔍 Frontend login request: { email: 'test@example.com', password: 'password123' }
-   🔍 Frontend login response: { data: { _id: '...', name: 'Test User', email: 'test@example.com', role: 'owner', token: '...' }, success: true }
-   ```
+```
+🔍 Frontend login request: { email: '<test_email>', password: '<test_password>' }
+🔍 Frontend login response: { data: { _id: '...', name: 'Test User', email: '<test_email>', role: 'owner', token: '...' }, success: true }
+```
 
 ### Step 3: Analyze the Debug Output
 
@@ -95,22 +94,22 @@ Connect to MongoDB and verify the user exists:
 
 ```bash
 # Connect to MongoDB
-mongo "mongodb://admin:password@localhost:27017/prolink"
+mongo "<MONGODB_URI_FROM_ENV>"
 
 # Check users collection
-use prolink
-db.users.find({ email: "test@example.com" }).pretty()
+use <database_name>
+db.users.find({ email: "<test_email>" }).pretty()
 ```
 
 **Expected output:**
 ```json
 {
-  "_id": ObjectId("60f7b3b3c3d9a40015a1f3a1"),
+  "_id": ObjectId("<user_id>"),
   "name": "Test User",
-  "email": "test@example.com",
-  "password": "$2a$10$...",
+  "email": "<test_email>",
+  "password": "<hashed_password>",
   "role": "owner",
-  "createdAt": ISODate("2023-07-21T10:30:00.000Z"),
+  "createdAt": ISODate("<timestamp>"),
   "__v": 0
 }
 ```
@@ -120,19 +119,19 @@ db.users.find({ email: "test@example.com" }).pretty()
 Use curl or Postman to test the login API directly:
 
 ```bash
-curl -X POST http://localhost:5000/api/users/login \
+curl -X POST <API_BASE_URL>/api/users/login \
   -H "Content-Type: application/json" \
-  -d '{"email":"test@example.com","password":"password123"}'
+  -d '{"email":"<test_email>","password":"<test_password>"}'
 ```
 
 **Expected response:**
 ```json
 {
-  "_id": "60f7b3b3c3d9a40015a1f3a1",
+  "_id": "<user_id>",
   "name": "Test User",
-  "email": "test@example.com",
+  "email": "<test_email>",
   "role": "owner",
-  "token": "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9..."
+  "token": "<jwt_token>"
 }
 ```
 

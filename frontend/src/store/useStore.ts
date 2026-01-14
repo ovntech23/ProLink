@@ -157,8 +157,11 @@ export const useStore = create<AppState>((set, get) => ({
       }
 
       try {
+        console.log('Fetching shipments...');
         const { data: shipmentsData } = await shipmentApi.getShipments();
+        console.log('Shipments received:', shipmentsData);
         shipments = shipmentsData.map((s: any) => ({ ...s, id: s._id }));
+        console.log('Mapped shipments:', shipments);
       } catch (error) {
         console.warn('Failed to fetch shipments:', error);
       }
