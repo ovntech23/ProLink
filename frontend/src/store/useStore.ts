@@ -157,6 +157,8 @@ interface AppState {
   broadcastShipmentUpdate: (shipmentId: string, updates: Partial<Shipment>) => void;
   broadcastDriverUpdate: (driverId: string, updates: Partial<DriverProfile>) => void;
   broadcastUserUpdate: (userId: string, updates: Partial<User>) => void;
+  isSoundMuted: boolean;
+  toggleSoundMute: () => void;
 }
 
 export const useStore = create<AppState>((set, get) => ({
@@ -170,6 +172,15 @@ export const useStore = create<AppState>((set, get) => ({
   jobs: [],
   onlineUsers: [],
   replyTo: null,
+  isSoundMuted: localStorage.getItem('isSoundMuted') === 'true',
+
+  toggleSoundMute: () => {
+    set(state => {
+      const isMuted = !state.isSoundMuted;
+      localStorage.setItem('isSoundMuted', String(isMuted));
+      return { isSoundMuted: isMuted };
+    });
+  },
 
   // Initialize store with data from API
   init: async () => {
@@ -1068,6 +1079,13 @@ export const useStore = create<AppState>((set, get) => ({
           }
         }
       });
+
+      // Play notification sound if not muted
+      const { isSoundMuted } = get();
+      if (!isSoundMuted) {
+        const audio = new Audio('https://assets.mixkit.co/active_storage/sfx/2869/2869-preview.mp3'); // Short cheerful beep
+        audio.play().catch(err => console.error('Error playing sound:', err));
+      }
     });
 
     // Listen for message reaction events
@@ -1091,6 +1109,27 @@ export const useStore = create<AppState>((set, get) => ({
       set(state => ({
         jobs: [mappedJob, ...state.jobs.filter(j => j.id !== mappedJob.id)]
       }));
+
+      // Notify drivers
+      const { currentUser } = get();
+      if (currentUser?.role === 'driver') {
+        toast.info('New Job Posted', {
+          description: `New load available: ${mappedJob.origin} to ${mappedJob.destination}`,
+          action: {
+            label: 'View',
+            onClick: () => {
+              // Navigation logic would go here, user is already likely on the job board or can navigate there
+            }
+          }
+        });
+
+        // Play notification sound if not muted
+        const { isSoundMuted } = get();
+        if (!isSoundMuted) {
+          const audio = new Audio('https://assets.mixkit.co/active_storage/sfx/2869/2869-preview.mp3');
+          audio.play().catch(err => console.error('Error playing sound:', err));
+        }
+      }
     });
 
     socket.on('jobReaction', (data: { jobId: string; reactions: any[] }) => {
