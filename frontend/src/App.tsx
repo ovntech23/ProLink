@@ -14,6 +14,7 @@ import { Tracking } from './pages/owner/Tracking';
 import { Home } from './pages/Home';
 import { PublicTracking } from './pages/PublicTracking';
 import { JobBoard } from './pages/driver/JobBoard';
+import DiscoveryBoard from './pages/DiscoveryBoard';
 import { Profile } from './pages/driver/Profile';
 import { Toaster } from '@/components/ui/toaster';
 import { Toaster as Sonner } from '@/components/ui/sonner';
@@ -50,6 +51,7 @@ function App() {
             <Route path="billing" element={<Billing />} />
             <Route path="approvals" element={<UserApproval />} />
             <Route path="messages" element={<MessagesPage />} />
+            <Route path="jobs" element={<DiscoveryBoard />} />
             <Route path="profile" element={<Profile />} />
           </Route>
 
@@ -63,6 +65,7 @@ function App() {
             <Route path="billing" element={<Billing />} />
             <Route path="approvals" element={<UserApproval />} />
             <Route path="messages" element={<MessagesPage />} />
+            <Route path="jobs" element={<DiscoveryBoard />} />
             <Route path="profile" element={<Profile />} />
           </Route>
 
@@ -80,6 +83,7 @@ function App() {
           <Route path="/driver" element={<DashboardLayout />}>
             <Route index element={<Navigate to="jobs" replace />} />
             <Route path="jobs" element={<JobBoard />} />
+            <Route path="discovery" element={<DiscoveryBoard />} />
             <Route path="profile" element={<Profile />} />
             <Route path="messages" element={<MessagesPage />} />
           </Route>

@@ -1,4 +1,4 @@
-import { LayoutDashboard, Truck, Package, UserCircle, LogOut, PlusCircle, CreditCard, X, UserCheck, MessageCircle, Users } from 'lucide-react';
+import { LayoutDashboard, Truck, Package, UserCircle, LogOut, PlusCircle, CreditCard, X, UserCheck, MessageCircle, Users, Briefcase } from 'lucide-react';
 import { NavLink, useNavigate } from 'react-router-dom';
 import { useStore } from '../../store/useStore';
 import { Badge } from '../ui/badge';
@@ -29,6 +29,7 @@ export const Sidebar = ({ isOpen, onClose }: SidebarProps) => {
       { icon: CreditCard, label: 'Billing & Payments', to: '/broker/billing' },
       { icon: UserCheck, label: 'User Approvals', to: '/broker/approvals' },
       { icon: MessageCircle, label: 'Messages', to: '/broker/messages' },
+      { icon: Briefcase, label: 'Job Board', to: '/broker/jobs' },
       { icon: UserCircle, label: 'My Profile', to: '/broker/profile' },
     ],
     owner: [
@@ -39,6 +40,7 @@ export const Sidebar = ({ isOpen, onClose }: SidebarProps) => {
     ],
     driver: [
       { icon: Truck, label: 'My Jobs', to: '/driver/jobs' },
+      { icon: Briefcase, label: 'Discovery Board', to: '/driver/discovery' },
       { icon: UserCircle, label: 'My Profile', to: '/driver/profile' },
       { icon: MessageCircle, label: 'Messages', to: '/driver/messages' },
     ],
@@ -50,6 +52,7 @@ export const Sidebar = ({ isOpen, onClose }: SidebarProps) => {
       { icon: CreditCard, label: 'Billing & Payments', to: '/admin/billing' },
       { icon: UserCheck, label: 'User Approvals', to: '/admin/approvals' },
       { icon: MessageCircle, label: 'Messages', to: '/admin/messages' },
+      { icon: Briefcase, label: 'Job Board', to: '/admin/jobs' },
       { icon: UserCircle, label: 'My Profile', to: '/admin/profile' },
     ]
   };

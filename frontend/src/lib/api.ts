@@ -299,6 +299,31 @@ export const paymentApi = {
   },
 };
 
+// Job API
+export const jobApi = {
+  getJobs: async () => {
+    return fetchApi<any[]>('/api/jobs');
+  },
+  createJob: async (jobData: any) => {
+    return fetchApi<any>('/api/jobs', {
+      method: 'POST',
+      body: JSON.stringify(jobData),
+    });
+  },
+  reactToJob: async (jobId: string, emoji: string) => {
+    return fetchApi<any>(`/api/jobs/${jobId}/react`, {
+      method: 'POST',
+      body: JSON.stringify({ emoji }),
+    });
+  },
+  updateJobStatus: async (jobId: string, status: string) => {
+    return fetchApi<any>(`/api/jobs/${jobId}/status`, {
+      method: 'PUT',
+      body: JSON.stringify({ status }),
+    });
+  },
+};
+
 // Export the base fetchApi function for custom requests and types
 export { fetchApi };
 export type { Statistic, Cargo, Feature };

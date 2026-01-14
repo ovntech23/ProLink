@@ -1,9 +1,9 @@
 import { create } from 'zustand';
-import { driverApi, authApi, userApi, shipmentApi, paymentApi, messageApi } from '../lib/api';
+import { driverApi, authApi, userApi, shipmentApi, paymentApi, messageApi, jobApi } from '../lib/api';
 import { initSocket, sendSocketMessage, onOnlineUsersUpdate, disconnectSocket, getSocket } from '../lib/socket';
 import { toast } from 'sonner';
 
-export type UserRole = 'broker' | 'driver' | 'owner';
+export type UserRole = 'broker' | 'driver' | 'owner' | 'admin';
 
 export interface User {
   id: string;
@@ -94,6 +94,24 @@ export interface Attachment {
   size?: number;
 }
 
+export interface JobPost {
+  id: string;
+  title: string;
+  description: string;
+  origin: string;
+  destination: string;
+  budget: number;
+  pickupDate: string;
+  status: 'open' | 'filled' | 'cancelled';
+  postedBy: {
+    id: string;
+    name: string;
+    avatar?: string;
+  };
+  reactions: { user: string; emoji: string }[];
+  createdAt: string;
+}
+
 interface AppState {
   currentUser: User | null;
   isAuthChecking: boolean;
@@ -102,6 +120,7 @@ interface AppState {
   shipments: Shipment[];
   payments: Payment[];
   messages: Message[];
+  jobs: JobPost[];
   onlineUsers: string[];
   replyTo: Message['replyTo'] | null;
   login: (email: string, password: string) => Promise<User | null>;
@@ -122,6 +141,10 @@ interface AppState {
   sendMessage: (recipientId: string, content: string, attachments?: Attachment[]) => void;
   addReaction: (messageId: string, emoji: string) => Promise<void>;
   setReplyTo: (reply: Message['replyTo'] | null) => void;
+  createJob: (jobData: Omit<JobPost, 'id' | 'postedBy' | 'status' | 'reactions' | 'createdAt'>) => Promise<void>;
+  fetchJobs: () => Promise<void>;
+  reactToJob: (jobId: string, emoji: string) => Promise<void>;
+  updateJobStatus: (jobId: string, status: JobPost['status']) => Promise<void>;
   getMessagesBetweenUsers: (userId1: string, userId2: string) => Message[];
   getUnreadMessages: (userId: string) => Message[];
   markMessageAsRead: (messageId: string) => void;
@@ -144,6 +167,7 @@ export const useStore = create<AppState>((set, get) => ({
   shipments: [],
   payments: [],
   messages: [],
+  jobs: [],
   onlineUsers: [],
   replyTo: null,
 
@@ -161,6 +185,15 @@ export const useStore = create<AppState>((set, get) => ({
         { name: 'users', op: userApi.getUsers, mapper: (data: any[]) => data.map(u => ({ ...u, id: u._id })) },
         { name: 'shipments', op: shipmentApi.getShipments, mapper: (data: any[]) => data.map(s => ({ ...s, id: s._id })) },
         { name: 'payments', op: paymentApi.getPayments, mapper: (data: any[]) => data.map(p => ({ ...p, id: p._id })) },
+        {
+          name: 'jobs',
+          op: jobApi.getJobs,
+          mapper: (data: any[]) => data.map(j => ({
+            ...j,
+            id: j._id || j.id,
+            postedBy: { ...j.postedBy, id: j.postedBy?._id || j.postedBy?.id || j.postedBy }
+          }))
+        },
         {
           name: 'messages', op: messageApi.getMessages, mapper: (data: any[]) => data.map(m => ({
             ...m,
@@ -687,6 +720,80 @@ export const useStore = create<AppState>((set, get) => ({
 
   setReplyTo: (reply) => set({ replyTo: reply }),
 
+  createJob: async (jobData) => {
+    try {
+      const response = await jobApi.createJob(jobData);
+      // We don't necessarily need to add to state here if we rely on WebSocket, 
+      // but optimistic update is better
+      const newJob = {
+        ...response.data,
+        id: response.data._id || response.data.id
+      };
+      set(state => ({ jobs: [newJob, ...state.jobs] }));
+    } catch (error) {
+      console.error('Failed to create job:', error);
+      throw error;
+    }
+  },
+
+  fetchJobs: async () => {
+    try {
+      const response = await jobApi.getJobs();
+      set({
+        jobs: response.data.map((j: any) => ({
+          ...j,
+          id: j._id || j.id,
+          postedBy: { ...j.postedBy, id: j.postedBy?._id || j.postedBy?.id || j.postedBy }
+        }))
+      });
+    } catch (error) {
+      console.error('Failed to fetch jobs:', error);
+    }
+  },
+
+  reactToJob: async (jobId, emoji) => {
+    const { currentUser } = get();
+    if (!currentUser) return;
+
+    // Optimistic update
+    set(state => ({
+      jobs: state.jobs.map(j => {
+        if (j.id === jobId) {
+          const reactions = j.reactions || [];
+          const existingIndex = reactions.findIndex(
+            r => r.user === currentUser.id && r.emoji === emoji
+          );
+
+          if (existingIndex > -1) {
+            const newReactions = [...reactions];
+            newReactions.splice(existingIndex, 1);
+            return { ...j, reactions: newReactions };
+          } else {
+            return { ...j, reactions: [...reactions, { user: currentUser.id, emoji }] };
+          }
+        }
+        return j;
+      })
+    }));
+
+    try {
+      await jobApi.reactToJob(jobId, emoji);
+    } catch (error) {
+      console.error('Failed to react to job:', error);
+    }
+  },
+
+  updateJobStatus: async (jobId, status) => {
+    try {
+      await jobApi.updateJobStatus(jobId, status);
+      set(state => ({
+        jobs: state.jobs.map(j => j.id === jobId ? { ...j, status } : j)
+      }));
+    } catch (error) {
+      console.error('Failed to update job status:', error);
+    }
+  },
+
   getMessagesBetweenUsers: (userId1, userId2) => {
     const state = get();
     return state.messages
@@ -938,6 +1045,37 @@ export const useStore = create<AppState>((set, get) => ({
       set(state => ({
         messages: state.messages.map(m =>
           m.id === data.messageId ? { ...m, reactions: data.reactions } : m
+        )
+      }));
+    });
+
+    // Job Board listeners
+    socket.on('jobCreated', (job: any) => {
+      console.log('Received jobCreated:', job);
+      const mappedJob = {
+        ...job,
+        id: job._id || job.id,
+        postedBy: { ...job.postedBy, id: job.postedBy?._id || job.postedBy?.id || job.postedBy }
+      };
+      set(state => ({
+        jobs: [mappedJob, ...state.jobs.filter(j => j.id !== mappedJob.id)]
+      }));
+    });
+
+    socket.on('jobReaction', (data: { jobId: string; reactions: any[] }) => {
+      console.log('Received jobReaction:', data);
+      set(state => ({
+        jobs: state.jobs.map(j =>
+          j.id === data.jobId ? { ...j, reactions: data.reactions } : j
+        )
+      }));
+    });
+
+    socket.on('jobStatusUpdated', (data: { jobId: string; status: JobPost['status'] }) => {
+      console.log('Received jobStatusUpdated:', data);
+      set(state => ({
+        jobs: state.jobs.map(j =>
+          j.id === data.jobId ? { ...j, status: data.status } : j
         )
       }));
     });

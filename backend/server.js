@@ -29,6 +29,7 @@ const cargoRoutes = require('./routes/cargoRoutes');
 const featureRoutes = require('./routes/featureRoutes');
 const shipmentRoutes = require('./routes/shipmentRoutes');
 const paymentRoutes = require('./routes/paymentRoutes');
+const jobRoutes = require('./routes/jobRoutes');
 
 // Initialize app
 const app = express();
@@ -356,6 +357,7 @@ app.use('/api/cargos', cargoRoutes);
 app.use('/api/features', featureRoutes);
 app.use('/api/shipments', shipmentRoutes);
 app.use('/api/payments', paymentRoutes);
+app.use('/api/jobs', jobRoutes);
 
 app.get('/', (req, res) => {
   res.json({ message: 'Welcome to ProLink API' });
