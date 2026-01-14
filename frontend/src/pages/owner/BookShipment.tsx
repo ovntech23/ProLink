@@ -57,7 +57,7 @@ export const BookShipment = () => {
     setIsSubmitting(true);
 
     try {
-      const newShipment = addShipment({
+      const newShipment = await addShipment({
         ownerId: currentUser.id,
         cargoType: formData.cargoType,
         weight: `${formData.weight}kg`,
@@ -189,17 +189,17 @@ export const BookShipment = () => {
                         <MapPin size={14} /> Logistics Route
                       </h4>
                       <div className="space-y-4">
-<div className="relative pl-6 pb-4 border-l-2 border-slate-100">
-<div className="absolute -left-1.25 top-0 w-2 h-2 rounded-full bg-slate-400"></div>
-<p className="text-[10px] font-bold text-slate-400 uppercase tracking-tight">Origin</p>
-<p className="text-sm font-bold">{formData.pickupAddress}, {formData.pickupCity}</p>
-<p className="text-xs text-slate-500">{formData.pickupContactPerson} • {formData.pickupContactPhone}</p>
+                        <div className="relative pl-6 pb-4 border-l-2 border-slate-100">
+                          <div className="absolute -left-1.25 top-0 w-2 h-2 rounded-full bg-slate-400"></div>
+                          <p className="text-[10px] font-bold text-slate-400 uppercase tracking-tight">Origin</p>
+                          <p className="text-sm font-bold">{formData.pickupAddress}, {formData.pickupCity}</p>
+                          <p className="text-xs text-slate-500">{formData.pickupContactPerson} • {formData.pickupContactPhone}</p>
                         </div>
-<div className="relative pl-6">
-<div className="absolute -left-1.25 top-0 w-2 h-2 rounded-full bg-[#ba0b0b]"></div>
-<p className="text-[10px] font-bold text-[#ba0b0b] uppercase tracking-tight">Destination</p>
-<p className="text-sm font-bold">{formData.deliveryAddress}, {formData.deliveryCity}</p>
-<p className="text-xs text-slate-500">{formData.deliveryContactPerson} • {formData.deliveryContactPhone}</p>
+                        <div className="relative pl-6">
+                          <div className="absolute -left-1.25 top-0 w-2 h-2 rounded-full bg-[#ba0b0b]"></div>
+                          <p className="text-[10px] font-bold text-[#ba0b0b] uppercase tracking-tight">Destination</p>
+                          <p className="text-sm font-bold">{formData.deliveryAddress}, {formData.deliveryCity}</p>
+                          <p className="text-xs text-slate-500">{formData.deliveryContactPerson} • {formData.deliveryContactPhone}</p>
                         </div>
                       </div>
                     </div>

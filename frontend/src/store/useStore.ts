@@ -97,7 +97,7 @@ interface AppState {
   onlineUsers: string[];
   login: (email: string, password: string) => Promise<User | null>;
   logout: () => void;
-  addShipment: (shipment: Omit<Shipment, 'id' | 'trackingId' | 'statusHistory'>) => Shipment;
+  addShipment: (shipment: Omit<Shipment, 'id' | 'trackingId' | 'statusHistory'>) => Promise<Shipment>;
   assignDriver: (shipmentId: string, driverId: string) => void;
   addDriver: (driver: Omit<DriverProfile, 'id' | 'status' | 'role'>) => void;
   updateDriverProfile: (driverId: string, updates: Partial<DriverProfile>, comment?: string) => void;
@@ -271,15 +271,28 @@ export const useStore = create<AppState>((set, get) => ({
     disconnectSocket();
   },
 
-  addShipment: (data) => {
-    const newShipment: Shipment = {
-      ...data,
-      id: Math.random().toString(36).substr(2, 9),
-      trackingId: `TRK-${Math.floor(100000 + Math.random() * 900000)}`,
-      statusHistory: [{ status: data.status, timestamp: new Date().toISOString(), note: 'Shipment created' }]
-    };
-    set(state => ({ shipments: [newShipment, ...state.shipments] }));
-    return newShipment;
+  addShipment: async (data) => {
+    // Generate a tracking ID if the backend doesn't handle it
+    const trackingId = `TRK-${Math.floor(100000 + Math.random() * 900000)}`;
+
+    try {
+      const response = await shipmentApi.createShipment({
+        ...data,
+        trackingId,
+        statusHistory: [{ status: data.status, timestamp: new Date().toISOString(), note: 'Shipment created' }]
+      });
+
+      const newShipment: Shipment = {
+        ...response.data,
+        id: response.data._id || response.data.id
+      };
+
+      set(state => ({ shipments: [newShipment, ...state.shipments] }));
+      return newShipment;
+    } catch (error) {
+      console.error('Failed to create shipment:', error);
+      throw error;
+    }
   },
 
   assignDriver: (shipmentId, driverId) => {
