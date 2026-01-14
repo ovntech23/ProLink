@@ -950,11 +950,13 @@ export const useStore = create<AppState>((set, get) => ({
       if (type === 'shipment') {
         set(state => {
           if (action === 'create') {
-            return { shipments: [data, ...state.shipments] };
+            // Deduplicate: remove if already exists (e.g. from optimistic update)
+            const cleanedShipments = state.shipments.filter(s => s.id !== data.id && s.id !== data._id);
+            return { shipments: [data, ...cleanedShipments] };
           } else if (action === 'update') {
             return {
               shipments: state.shipments.map(s =>
-                s.id === data.id ? { ...s, ...data } : s
+                (s.id === data.id || (s as any)._id === data.id) ? { ...s, ...data } : s
               )
             };
           } else if (action === 'delete') {
@@ -967,20 +969,17 @@ export const useStore = create<AppState>((set, get) => ({
       } else if (type === 'user') {
         set(state => {
           // Handle user updates (affecting both users and drivers lists)
-          let newUsers = state.users;
-          let newDrivers = state.drivers;
+          const userId = data.id || data._id;
+          let newUsers = state.users.filter(u => u.id !== userId);
+          let newDrivers = state.drivers.filter(d => d.id !== userId);
 
-          if (action === 'create') {
-            newUsers = [data, ...state.users];
+          if (action === 'create' || action === 'update') {
+            newUsers = [data, ...newUsers];
             if (data.role === 'driver') {
-              newDrivers = [data as DriverProfile, ...state.drivers];
+              newDrivers = [data as DriverProfile, ...newDrivers];
             }
-          } else if (action === 'update') {
-            newUsers = state.users.map(u => u.id === data.id ? { ...u, ...data } : u);
-            newDrivers = state.drivers.map(d => d.id === data.id ? { ...d, ...data } : d);
           } else if (action === 'delete') {
-            newUsers = state.users.filter(u => u.id !== data.id);
-            newDrivers = state.drivers.filter(d => d.id !== data.id);
+            // Already filtered out above
           }
 
           return { users: newUsers, drivers: newDrivers };
@@ -1022,15 +1021,35 @@ export const useStore = create<AppState>((set, get) => ({
         replyTo: message.replyTo
       };
 
-      // Ignore messages sent by current user to avoid duplication with optimistic updates
-      const { currentUser } = get();
-      if (currentUser && mappedMessage.senderId === currentUser.id) {
-        return;
-      }
+      // Deduplicate and resolve optimistic messages
+      set((state) => {
+        const { currentUser } = get();
+        let messages = state.messages;
 
-      set((state) => ({
-        messages: [...state.messages, mappedMessage]
-      }));
+        // 1. Check if this is a real message replacing an optimistic one
+        let replaced = false;
+        if (currentUser && mappedMessage.senderId === currentUser.id) {
+          messages = messages.map(m => {
+            if (m.id.startsWith('opt-') && m.content === mappedMessage.content && m.recipientId === mappedMessage.recipientId) {
+              replaced = true;
+              return mappedMessage;
+            }
+            return m;
+          });
+        }
+
+        // 2. If not replaced, but already exists by ID, just ignore (or update)
+        if (!replaced && messages.some(m => m.id === mappedMessage.id)) {
+          return {};
+        }
+
+        // 3. If not replaced and doesn't exist, append
+        if (!replaced) {
+          messages = [...messages, mappedMessage];
+        }
+
+        return { messages };
+      });
 
       // Show toast notification for new incoming messages
       const sender = get().users.find(u => u.id === mappedMessage.senderId);
