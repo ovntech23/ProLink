@@ -419,6 +419,12 @@ connectDB().then(() => {
 
 // Set up MongoDB change streams for real-time updates
 const setupChangeStreams = () => {
+  // Check if we are connected to a database that supports change streams (Replica Set required)
+  if (mongoose.connection.readyState !== 1) {
+    console.warn('⚠️ MongoDB not connected yet. Skipping change stream setup.');
+    return;
+  }
+
   try {
     // Shipment change stream
     const shipmentCollection = mongoose.connection.collection('shipments');
@@ -426,41 +432,45 @@ const setupChangeStreams = () => {
 
     shipmentChangeStream.on('change', (change) => {
       console.log('Shipment change detected:', change.operationType, change.documentKey);
+      // Non-blocking try-catch for events
+      try {
+        // Emit different events based on operation type
+        let action = 'unknown';
+        let data = {};
 
-      // Emit different events based on operation type
-      let action = 'unknown';
-      let data = {};
-
-      switch (change.operationType) {
-        case 'insert': {
-          action = 'create';
-          const { vehicleImage, password, ...cleanDoc } = change.fullDocument;
-          data = { id: cleanDoc._id, ...cleanDoc };
-          io.emit('shipmentCreated', data);
-          break;
+        switch (change.operationType) {
+          case 'insert': {
+            action = 'create';
+            const { vehicleImage, password, ...cleanDoc } = change.fullDocument || {};
+            data = { id: (cleanDoc && cleanDoc._id) || change.documentKey._id, ...cleanDoc };
+            io.emit('shipmentCreated', data);
+            break;
+          }
+          case 'update':
+          case 'replace': {
+            action = 'update';
+            const { vehicleImage, password, ...cleanUpdate } = change.fullDocument || {};
+            data = { id: change.documentKey._id, ...cleanUpdate };
+            io.emit('shipmentUpdate', data);
+            break;
+          }
+          case 'delete':
+            action = 'delete';
+            data = { id: change.documentKey._id };
+            io.emit('shipmentDeleted', data);
+            break;
         }
-        case 'update':
-        case 'replace': {
-          action = 'update';
-          const { vehicleImage, password, ...cleanUpdate } = change.fullDocument;
-          data = { id: change.documentKey._id, ...cleanUpdate };
-          io.emit('shipmentUpdate', data);
-          break;
-        }
-        case 'delete':
-          action = 'delete';
-          data = { id: change.documentKey._id };
-          io.emit('shipmentDeleted', data);
-          break;
-      }
 
-      // Generic event: data-updated
-      if (action !== 'unknown') {
-        io.emit('data-updated', {
-          type: 'shipment',
-          action,
-          data
-        });
+        // Generic event: data-updated
+        if (action !== 'unknown') {
+          io.emit('data-updated', {
+            type: 'shipment',
+            action,
+            data
+          });
+        }
+      } catch (innerErr) {
+        console.error('Error processing shipment change event:', innerErr);
       }
     });
 
@@ -470,47 +480,59 @@ const setupChangeStreams = () => {
 
     userChangeStream.on('change', (change) => {
       console.log('User/Driver change detected:', change.operationType, change.documentKey);
+      try {
+        // Emit different events based on operation type
+        let action = 'unknown';
+        let data = {};
 
-      // Emit different events based on operation type
-      let action = 'unknown';
-      let data = {};
-
-      switch (change.operationType) {
-        case 'insert': {
-          action = 'create';
-          const { vehicleImage, password, ...cleanUserDoc } = change.fullDocument;
-          data = { id: cleanUserDoc._id, ...cleanUserDoc };
-          io.emit('userCreated', data);
-          break;
+        switch (change.operationType) {
+          case 'insert': {
+            action = 'create';
+            const { vehicleImage, password, ...cleanUserDoc } = change.fullDocument || {};
+            data = { id: (cleanUserDoc && cleanUserDoc._id) || change.documentKey._id, ...cleanUserDoc };
+            io.emit('userCreated', data);
+            break;
+          }
+          case 'update':
+          case 'replace': {
+            action = 'update';
+            const { vehicleImage, password, ...cleanUserUpdate } = change.fullDocument || {};
+            data = { id: change.documentKey._id, ...cleanUserUpdate };
+            io.emit('userUpdate', data);
+            break;
+          }
+          case 'delete':
+            action = 'delete';
+            data = { id: change.documentKey._id };
+            io.emit('userDeleted', data);
+            break;
         }
-        case 'update':
-        case 'replace': {
-          action = 'update';
-          const { vehicleImage, password, ...cleanUserUpdate } = change.fullDocument;
-          data = { id: change.documentKey._id, ...cleanUserUpdate };
-          io.emit('userUpdate', data);
-          break;
-        }
-        case 'delete':
-          action = 'delete';
-          data = { id: change.documentKey._id };
-          io.emit('userDeleted', data);
-          break;
-      }
 
-      // Generic event: data-updated
-      if (action !== 'unknown') {
-        io.emit('data-updated', {
-          type: 'user', // Note: this covers drivers too as they are users
-          action,
-          data
-        });
+        // Generic event: data-updated
+        if (action !== 'unknown') {
+          io.emit('data-updated', {
+            type: 'user', // Note: this covers drivers too as they are users
+            action,
+            data
+          });
+        }
+      } catch (innerErr) {
+        console.error('Error processing user change event:', innerErr);
       }
     });
 
     console.log('✅ MongoDB change streams initialized');
+
+    // Handle change stream errors without crashing the server
+    shipmentChangeStream.on('error', (err) => {
+      console.error('⚠️ Shipment change stream error (possibly no Replica Set):', err.message);
+    });
+    userChangeStream.on('error', (err) => {
+      console.error('⚠️ User change stream error (possibly no Replica Set):', err.message);
+    });
+
   } catch (error) {
-    console.error('❌ Error setting up change streams:', error);
+    console.error('❌ Could not initialize change streams (Replica Set required):', error.message);
   }
 };
 

@@ -1,51 +1,40 @@
-# Use Node.js 20 as base image for MERN stack
+# Build Stage 1: Build Frontend
+FROM node:20-alpine AS frontend-builder
+WORKDIR /app/frontend
+COPY frontend/package*.json ./
+RUN npm ci
+COPY frontend/ ./
+RUN VITE_API_BASE_URL="" npm run build
+
+# Build Stage 2: Prepare Backend
+FROM node:20-alpine AS backend-preparer
+WORKDIR /app/backend
+COPY backend/package*.json ./
+RUN npm ci --only=production
+COPY backend/ ./
+
+# Stage 3: Final Production Image
 FROM node:20-alpine
-
-# Install curl for health check
 RUN apk add --no-cache curl
-
-# Create app directory
-WORKDIR /app
-
-# Copy package files for backend
-COPY backend/package*.json ./backend/
-
-# Install backend dependencies
-RUN cd backend && npm ci --only=production
-
-# Copy backend source
-COPY backend/ ./backend/
-
-# Copy frontend source
-COPY frontend/ ./frontend/
-
-# Install frontend dependencies (including devDependencies needed for build)
-RUN cd frontend && npm ci
-
-# Build frontend with production environment variables
-# Set VITE_API_BASE_URL to empty string for relative URLs in production
-RUN cd frontend && VITE_API_BASE_URL="" npm run build
-
-# Move built frontend to backend public directory
-RUN mv frontend/dist backend/public
-
-# Create non-root user for security
-RUN addgroup -g 1001 -S nodejs
-RUN adduser -S nextjs -u 1001
-
-# Change ownership of app files to non-root user
-RUN chown -R nextjs:nodejs /app/backend
-USER nextjs
-
-# Expose port
-EXPOSE 5000
-
-# Set working directory to backend
 WORKDIR /app/backend
 
-# Add health check with curl and better error handling
+# Copy built frontend from Stage 1 to backend/public
+COPY --from=frontend-builder /app/frontend/dist ./public
+
+# Copy backend files from Stage 2
+COPY --from=backend-preparer /app/backend ./
+
+# Create non-root user for security
+RUN addgroup -g 1001 -S nodejs && \
+  adduser -S nextjs -u 1001 && \
+  chown -R nextjs:nodejs /app/backend
+
+USER nextjs
+
+EXPOSE 5000
+
+# Health check
 HEALTHCHECK --interval=30s --timeout=10s --start-period=10s --retries=3 \
   CMD curl -f http://localhost:5000/health || exit 1
 
-# Start the application
 CMD ["npm", "start"]
