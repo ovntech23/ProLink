@@ -1,6 +1,6 @@
 const express = require('express');
 const router = express.Router();
-const { registerUser, loginUser, getUsers, getUserById, getCurrentUser, createUser, updateUser, deleteUser } = require('../controllers/userController');
+const { registerUser, loginUser, getUsers, getUserById, getCurrentUser, createUser, updateUser, deleteUser, updateUserProfile, changePassword } = require('../controllers/userController');
 const { protect, admin } = require('../middleware/auth');
 const validateInput = require('../middleware/validateInput');
 
@@ -61,6 +61,12 @@ router.post('/register', validateInput(registerSchema), registerUser);
 
 // Get current user profile
 router.get('/me', protect, getCurrentUser);
+
+// Update user profile
+router.put('/profile', protect, updateUserProfile);
+
+// Change user password
+router.put('/profile/password', protect, changePassword);
 
 // Get all users - Protect this route so only authenticated users can see list (or restrict to admin/broker)
 router.get('/', protect, getUsers);

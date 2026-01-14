@@ -52,6 +52,12 @@ const userSchema = new mongoose.Schema({
   phone: {
     type: String
   },
+  avatar: {
+    type: String
+  },
+  vehicleImage: {
+    type: String
+  },
   isApproved: {
     type: Boolean,
     default: false

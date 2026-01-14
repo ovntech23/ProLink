@@ -28,11 +28,13 @@ export const Sidebar = ({ isOpen, onClose }: SidebarProps) => {
       { icon: CreditCard, label: 'Billing & Payments', to: '/broker/billing' },
       { icon: UserCheck, label: 'User Approvals', to: '/broker/approvals' },
       { icon: MessageCircle, label: 'Messages', to: '/broker/messages' },
+      { icon: UserCircle, label: 'My Profile', to: '/broker/profile' },
     ],
     owner: [
       { icon: Package, label: 'My Shipments', to: '/owner/shipments' },
       { icon: PlusCircle, label: 'Book Shipment', to: '/owner/book' },
       { icon: MessageCircle, label: 'Messages', to: '/owner/messages' },
+      { icon: UserCircle, label: 'My Profile', to: '/owner/profile' },
     ],
     driver: [
       { icon: Truck, label: 'My Jobs', to: '/driver/jobs' },
@@ -47,6 +49,7 @@ export const Sidebar = ({ isOpen, onClose }: SidebarProps) => {
       { icon: CreditCard, label: 'Billing & Payments', to: '/admin/billing' },
       { icon: UserCheck, label: 'User Approvals', to: '/admin/approvals' },
       { icon: MessageCircle, label: 'Messages', to: '/admin/messages' },
+      { icon: UserCircle, label: 'My Profile', to: '/admin/profile' },
     ]
   };
 
@@ -112,8 +115,12 @@ export const Sidebar = ({ isOpen, onClose }: SidebarProps) => {
 
         <div className="p-4 border-t border-destructive-foreground/20">
           <div className="flex items-center gap-3 px-4 py-3 mb-2">
-            <div className="w-8 h-8 rounded-full bg-white/20 flex items-center justify-center text-sm font-bold text-white">
-              {currentUser.name.charAt(0)}
+            <div className="w-8 h-8 rounded-full bg-white/20 flex items-center justify-center text-sm font-bold text-white overflow-hidden">
+              {currentUser.avatar ? (
+                <img src={currentUser.avatar} alt={currentUser.name} className="w-full h-full object-cover" />
+              ) : (
+                currentUser.name.charAt(0)
+              )}
             </div>
             <div className="flex-1 overflow-hidden">
               <p className="text-sm font-medium truncate text-white">{currentUser.name}</p>

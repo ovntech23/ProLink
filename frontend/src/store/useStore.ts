@@ -102,6 +102,8 @@ interface AppState {
   assignDriver: (shipmentId: string, driverId: string) => Promise<void>;
   addDriver: (driver: Omit<DriverProfile, 'id' | 'status' | 'role'>) => Promise<void>;
   updateDriverProfile: (driverId: string, updates: Partial<DriverProfile>, comment?: string) => Promise<void>;
+  updateProfile: (updates: Partial<User & DriverProfile>) => Promise<void>;
+  changePassword: (passwordData: any) => Promise<void>;
   updateShipmentStatus: (shipmentId: string, status: Shipment['status'], note?: string) => Promise<void>;
   addPayment: (payment: Omit<Payment, 'id'>) => void;
   updatePaymentStatus: (paymentId: string, status: Payment['status']) => void;
@@ -394,6 +396,40 @@ export const useStore = create<AppState>((set, get) => ({
     } catch (error) {
       console.error('Failed to update driver profile:', error);
       toast.error('Failed to update profile');
+      throw error;
+    }
+  },
+
+  updateProfile: async (updates) => {
+    try {
+      const { data: updatedUser } = await userApi.updateUserProfile(updates);
+
+      const mappedUser = {
+        ...updatedUser,
+        id: updatedUser._id || updatedUser.id
+      };
+
+      set(state => ({
+        currentUser: mappedUser,
+        users: state.users.map(u => u.id === mappedUser.id ? { ...u, ...mappedUser } : u),
+        drivers: state.drivers.map(d => d.id === mappedUser.id ? { ...d, ...mappedUser } : d)
+      }));
+
+      toast.success('Profile updated successfully');
+    } catch (error) {
+      console.error('Failed to update profile:', error);
+      toast.error(error instanceof Error ? error.message : 'Failed to update profile');
+      throw error;
+    }
+  },
+
+  changePassword: async (passwordData) => {
+    try {
+      await userApi.changePassword(passwordData);
+      toast.success('Password changed successfully');
+    } catch (error) {
+      console.error('Failed to change password:', error);
+      toast.error(error instanceof Error ? error.message : 'Failed to change password');
       throw error;
     }
   },

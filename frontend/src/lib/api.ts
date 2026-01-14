@@ -138,6 +138,18 @@ export const userApi = {
       method: 'DELETE',
     });
   },
+  updateUserProfile: async (userData: any) => {
+    return fetchApi<any>('/api/users/profile', {
+      method: 'PUT',
+      body: JSON.stringify(userData),
+    });
+  },
+  changePassword: async (passwordData: any) => {
+    return fetchApi<any>('/api/users/profile/password', {
+      method: 'PUT',
+      body: JSON.stringify(passwordData),
+    });
+  },
 };
 
 // Shipment API

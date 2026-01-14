@@ -50,6 +50,7 @@ function App() {
             <Route path="billing" element={<Billing />} />
             <Route path="approvals" element={<UserApproval />} />
             <Route path="messages" element={<MessagesPage />} />
+            <Route path="profile" element={<Profile />} />
           </Route>
 
           {/* Admin Routes - Reuse Broker Dashboard for now */}
@@ -62,6 +63,7 @@ function App() {
             <Route path="billing" element={<Billing />} />
             <Route path="approvals" element={<UserApproval />} />
             <Route path="messages" element={<MessagesPage />} />
+            <Route path="profile" element={<Profile />} />
           </Route>
 
           {/* Cargo Owner Routes */}
@@ -71,6 +73,7 @@ function App() {
             <Route path="book" element={<BookShipment />} />
             <Route path="tracking/:id" element={<Tracking />} />
             <Route path="messages" element={<MessagesPage />} />
+            <Route path="profile" element={<Profile />} />
           </Route>
 
           {/* Driver Routes */}

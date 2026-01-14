@@ -228,6 +228,107 @@ const deleteUser = async (req, res) => {
 // @desc Login user & get token
 // @route POST /api/users/login
 // @access Public
+// @desc    Update user profile
+// @route   PUT /api/users/profile
+// @access  Private
+const updateUserProfile = async (req, res) => {
+  try {
+    const user = await User.findById(req.user._id);
+
+    if (user) {
+      user.name = req.body.name || user.name;
+      user.email = req.body.email || user.email;
+      user.phone = req.body.phone || user.phone;
+      user.avatar = req.body.avatar || user.avatar;
+
+      if (user.role === 'driver') {
+        user.status = req.body.status || user.status;
+        user.vehicleType = req.body.vehicleType || user.vehicleType;
+        user.vehiclePlate = req.body.vehiclePlate || user.vehiclePlate;
+        user.vehicleModel = req.body.vehicleModel || user.vehicleModel;
+        user.vehicleCategory = req.body.vehicleCategory || user.vehicleCategory;
+        user.trailerPlate = req.body.trailerPlate || user.trailerPlate;
+        user.currentLocation = req.body.currentLocation || user.currentLocation;
+        user.vehicleImage = req.body.vehicleImage || user.vehicleImage;
+      }
+
+      const updatedUser = await user.save();
+
+      // Emit WebSocket event for real-time updates
+      const io = req.app.get('io');
+      if (io) {
+        io.emit('userUpdate', {
+          id: updatedUser._id,
+          name: updatedUser.name,
+          email: updatedUser.email,
+          role: updatedUser.role,
+          avatar: updatedUser.avatar,
+          phone: updatedUser.phone
+        });
+
+        if (updatedUser.role === 'driver') {
+          io.emit('driverUpdate', {
+            id: updatedUser._id,
+            status: updatedUser.status,
+            currentLocation: updatedUser.currentLocation,
+            avatar: updatedUser.avatar,
+            vehicleImage: updatedUser.vehicleImage
+          });
+        }
+      }
+
+      res.json({
+        _id: updatedUser._id,
+        name: updatedUser.name,
+        email: updatedUser.email,
+        role: updatedUser.role,
+        avatar: updatedUser.avatar,
+        phone: updatedUser.phone,
+        status: updatedUser.status,
+        vehicleType: updatedUser.vehicleType,
+        vehiclePlate: updatedUser.vehiclePlate,
+        vehicleModel: updatedUser.vehicleModel,
+        vehicleCategory: updatedUser.vehicleCategory,
+        trailerPlate: updatedUser.trailerPlate,
+        currentLocation: updatedUser.currentLocation,
+        vehicleImage: updatedUser.vehicleImage
+      });
+    } else {
+      res.status(404).json({ message: 'User not found' });
+    }
+  } catch (error) {
+    console.error(error);
+    res.status(500).json({ message: 'Server error' });
+  }
+};
+
+// @desc    Change user password
+// @route   PUT /api/users/profile/password
+// @access  Private
+const changePassword = async (req, res) => {
+  try {
+    const { currentPassword, newPassword } = req.body;
+    const user = await User.findById(req.user._id).select('+password');
+
+    if (!user) {
+      return res.status(404).json({ message: 'User not found' });
+    }
+
+    const isMatch = await bcrypt.compare(currentPassword, user.password);
+    if (!isMatch) {
+      return res.status(401).json({ message: 'Invalid current password' });
+    }
+
+    user.password = newPassword;
+    await user.save();
+
+    res.json({ message: 'Password updated successfully' });
+  } catch (error) {
+    console.error(error);
+    res.status(500).json({ message: 'Server error' });
+  }
+};
+
 const loginUser = async (req, res) => {
   try {
     const { email, password } = req.body;
@@ -282,6 +383,8 @@ module.exports = {
   getUserById,
   getCurrentUser,
   createUser,
+  updateUserProfile,
+  changePassword,
   updateUser,
   deleteUser
 };
