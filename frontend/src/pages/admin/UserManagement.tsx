@@ -33,6 +33,11 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Badge } from "@/components/ui/badge";
 import { Plus, Pencil, Trash2, Search } from 'lucide-react';
+import {
+    Avatar,
+    AvatarFallback,
+    AvatarImage,
+} from "@/components/ui/avatar";
 import { toast } from "@/components/ui/use-toast";
 
 export const UserManagement = () => {
@@ -155,9 +160,17 @@ export const UserManagement = () => {
                         {filteredUsers.map((user) => (
                             <TableRow key={user.id}>
                                 <TableCell>
-                                    <div className="flex flex-col">
-                                        <span className="font-medium">{user.name}</span>
-                                        <span className="text-sm text-muted-foreground">{user.email}</span>
+                                    <div className="flex items-center gap-3">
+                                        <Avatar className="h-9 w-9">
+                                            <AvatarImage src={user.avatar} alt={user.name} className="object-cover" />
+                                            <AvatarFallback className="bg-[#ba0b0b] text-white">
+                                                {user.name.charAt(0)}
+                                            </AvatarFallback>
+                                        </Avatar>
+                                        <div className="flex flex-col">
+                                            <span className="font-medium">{user.name}</span>
+                                            <span className="text-sm text-muted-foreground">{user.email}</span>
+                                        </div>
                                     </div>
                                 </TableCell>
                                 <TableCell>
