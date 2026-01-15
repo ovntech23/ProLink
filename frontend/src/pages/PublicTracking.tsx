@@ -35,7 +35,7 @@ export const PublicTracking = () => {
             // If running separately, needs full URL. Usually imported from config.
             const API_URL = import.meta.env.VITE_API_URL || 'http://localhost:5000/api';
 
-            const response = await fetch(`${API_URL}/shipments/track/${searchId.trim()}`);
+            const response = await fetch(`${API_URL}/shipments/lookup/${searchId.trim()}`);
             const data = await response.json();
 
             if (response.ok) {

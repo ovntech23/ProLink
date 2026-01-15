@@ -4,7 +4,7 @@ const { getShipments, getShipmentById, createShipment, updateShipment, getShipme
 const { protect } = require('../middleware/auth');
 
 // Public tracking route (must be before /:id to avoid conflict if IDs look like "track")
-router.get('/track/:trackingId', getShipmentByTracking);
+router.get('/lookup/:trackingId', getShipmentByTracking);
 
 // Get all shipments
 router.get('/', protect, getShipments);

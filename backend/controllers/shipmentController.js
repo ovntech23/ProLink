@@ -100,11 +100,11 @@ const updateShipment = async (req, res) => {
 };
 
 // @desc    Get shipment by Tracking ID (Public)
-// @route   GET /api/shipments/track/:trackingId
+// @route   GET /api/shipments/lookup/:trackingId
 // @access  Public
 const getShipmentByTracking = async (req, res) => {
     try {
-        console.log(`GET /api/shipments/track/${req.params.trackingId} - Public tracking request`);
+        console.log(`GET /api/shipments/lookup/${req.params.trackingId} - Public tracking request`);
         const { trackingId } = req.params;
 
         // Case-insensitive search
