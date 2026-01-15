@@ -157,6 +157,7 @@
   /* Set the site background color to white */
   body {
     background-color: white;
+    overflow-x: hidden;
   }
 }
 

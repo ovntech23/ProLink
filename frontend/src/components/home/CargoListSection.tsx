@@ -18,9 +18,9 @@ export const CargoListSection = () => {
   ];
 
   return (
-    <section className="py-20 bg-slate-50">
-      <div className="max-w-7xl mx-auto px-6">
-        <div className="flex flex-col md:flex-row justify-between items-end mb-12 gap-6">
+    <section className="py-12 sm:py-20 bg-slate-50">
+      <div className="max-w-7xl mx-auto px-4 sm:px-6">
+        <div className="flex flex-col md:flex-row justify-between items-end mb-8 sm:mb-12 gap-6">
           <div className="max-w-2xl">
             <Badge className="mb-4 bg-[#ba0b0b]">What We Move</Badge>
             <h2 className="text-3xl font-bold text-foreground">Specialized Cargo Solutions</h2>

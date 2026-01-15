@@ -10,7 +10,7 @@ export const PrivacyPolicy = () => {
     return (
         <div className="min-h-screen bg-slate-50 flex flex-col">
             <header className="bg-white border-b sticky top-0 z-50">
-                <div className="max-w-4xl mx-auto px-6 h-16 flex items-center justify-between">
+                <div className="max-w-4xl mx-auto px-4 sm:px-6 h-16 flex items-center justify-between">
                     <div className="flex items-center gap-2">
                         <Shield className="text-[#ba0b0b]" size={24} />
                         <h1 className="text-xl font-bold text-[#0a0c65]">Privacy Policy</h1>
@@ -21,7 +21,7 @@ export const PrivacyPolicy = () => {
                 </div>
             </header>
 
-            <main className="flex-grow py-12 px-6">
+            <main className="flex-grow py-8 sm:py-12 px-4 sm:px-6">
                 <div className="max-w-4xl mx-auto space-y-8">
                     <div className="text-center mb-12">
                         <h2 className="text-4xl font-black text-[#0a0c65] mb-4">Your Privacy Matters</h2>

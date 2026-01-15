@@ -79,7 +79,7 @@ export const HeroSection = ({ onNavigateToSignup, onNavigateToTrack }: HeroSecti
   }, [api, isHovered, effectiveRotationInterval]);
 
   return (
-    <section className="relative pt-32 pb-16 sm:pt-32 sm:pb-20 lg:pt-48 lg:pb-32 px-4 sm:px-6 hero-gradient overflow-hidden"
+    <section className="relative pt-24 pb-12 sm:pt-32 sm:pb-20 lg:pt-48 lg:pb-32 px-4 sm:px-6 hero-gradient overflow-hidden"
       style={{ backgroundImage: `url(${heroBackground})`, backgroundSize: 'cover', backgroundPosition: 'center', backgroundRepeat: 'no-repeat' }}
     >
       {/* Floating particles for background animation - now visible on all devices */}
@@ -92,50 +92,50 @@ export const HeroSection = ({ onNavigateToSignup, onNavigateToTrack }: HeroSecti
       <div className="max-w-7xl mx-auto grid lg:grid-cols-2 gap-8 sm:gap-12 items-center relative z-10">
         <div className="relative z-10 animate-fade-in animation-delay-200">
           {/* Floating tag with subtle animation */}
-          <div className={`inline-flex items-center gap-2 px-4 py-2 rounded-full bg-[#ba0b0b]/20 text-white text-sm font-bold mb-4 sm:mb-6 border-2 border-[#ba0b0b] animate-float animation-delay-500 shadow-lg shadow-[#ba0b0b]/30 transform hover:scale-105 transition-all duration-300`}>
+          <div className={`inline-flex items-center gap-2 px-3 py-1.5 sm:px-4 sm:py-2 rounded-full bg-[#ba0b0b]/20 text-white text-xs sm:text-sm font-bold mb-4 sm:mb-6 border-2 border-[#ba0b0b] animate-float animation-delay-500 shadow-lg shadow-[#ba0b0b]/30 transform hover:scale-105 transition-all duration-300`}>
             <span className="relative flex h-2 w-2">
               <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-primary opacity-75"></span>
               <span className="relative inline-flex rounded-full h-2 w-2 bg-primary"></span>
             </span>
             Zambia's Fast Growing Logistics Broker
           </div>
-          
+
           {/* Hero text with responsive sizing and floating animation */}
-          <h1 className="text-3xl sm:text-4xl md:text-5xl lg:text-6xl xl:text-7xl font-black leading-none mb-2 sm:mb-3 drop-shadow-2xl animate-slide-in-left hover:animate-float hover:duration-700 transition-all transform hover:scale-105"
+          <h1 className="text-3xl sm:text-4xl md:text-5xl lg:text-6xl xl:text-7xl font-black leading-none mb-3 sm:mb-3 drop-shadow-2xl animate-slide-in-left hover:animate-float hover:duration-700 transition-all transform hover:scale-105"
             style={{ textShadow: '0 0 20px rgba(255,255,255,0.8), 0 0 40px rgba(255,255,255,0.6), 0 0 60px rgba(255,255,255,0.4)' }}>
             <span className="block animate-float animation-delay-300 hover:animate-none hover:transform hover:-translate-y-2 hover:duration-300 transition-all"
               style={{ color: '#0a0c65' }}>
               Logistics: The backbone
             </span>
-            <div className="w-24 h-1 bg-linear-to-r from-[#ba0b0b] to-transparent my-1 sm:my-2 rounded-full animate-slide-in-left animation-delay-400"></div>
+            <div className="w-16 sm:w-24 h-1 bg-linear-to-r from-[#ba0b0b] to-transparent my-1 sm:my-2 rounded-full animate-slide-in-left animation-delay-400"></div>
             <span className="block animate-float animation-delay-500 hover:animate-none hover:transform hover:-translate-y-2 hover:duration-300 transition-all"
               style={{ color: '#ba0b0b' }}>
               of Global Trade
             </span>
           </h1>
-          
+
           {/* Description with entrance animation - responsive text size */}
-          <p className="text-lg sm:text-xl text-white mb-6 sm:mb-8 max-w-2xl leading-relaxed font-medium animate-fade-in animation-delay-700"
+          <p className="text-base sm:text-xl text-white mb-6 sm:mb-8 max-w-2xl leading-relaxed font-medium animate-fade-in animation-delay-700"
             style={{ textShadow: '0 2px 4px rgba(0,0,0,0.3)' }}>
             Prolink provides customised transport solutions with competitive rates and an authentic approach to real customer service. Trusted across Zambia and the world.
           </p>
-          
+
           {/* CTA Buttons with responsive sizing and floating effects */}
-          <div className="flex flex-col sm:flex-row gap-3 sm:gap-4 mb-8 sm:mb-12 animate-fade-in animation-delay-900">
+          <div className="flex flex-col xs:flex-row gap-3 sm:gap-4 mb-8 sm:mb-12 animate-fade-in animation-delay-900">
             <button onClick={onNavigateToSignup}
-              className="px-6 py-3 sm:px-8 sm:py-4 bg-[#ba0b0b] hover:bg-[#940909] rounded-xl font-bold transition-all transform hover:scale-105 shadow-xl shadow-[#ba0b0b]/20 flex items-center justify-center gap-2 text-white hover:animate-float hover:duration-1000 active:scale-95">
+              className="px-6 py-3 sm:px-8 sm:py-4 bg-[#ba0b0b] hover:bg-[#940909] rounded-xl font-bold transition-all transform hover:scale-105 shadow-xl shadow-[#ba0b0b]/20 flex items-center justify-center gap-2 text-white hover:animate-float hover:duration-1000 active:scale-95 text-sm sm:text-base">
               Start Shipping Now
               <ArrowRight size={18} className="group-hover:translate-x-1 transition-transform" />
             </button>
             <button onClick={onNavigateToTrack}
-              className="px-6 py-3 sm:px-8 sm:py-4 bg-secondary hover:bg-secondary/90 rounded-xl font-bold transition-all transform hover:scale-105 border border-secondary flex items-center justify-center gap-2 text-secondary-foreground hover:animate-float hover:duration-1000 active:scale-95 shadow-xl shadow-secondary/20">
+              className="px-6 py-3 sm:px-8 sm:py-4 bg-secondary hover:bg-secondary/90 rounded-xl font-bold transition-all transform hover:scale-105 border border-secondary flex items-center justify-center gap-2 text-secondary-foreground hover:animate-float hover:duration-1000 active:scale-95 shadow-xl shadow-secondary/20 text-sm sm:text-base">
               Track Shipment
               <ChevronRight size={18} className="group-hover:translate-x-1 transition-transform" />
             </button>
           </div>
-          
+
           {/* Feature icons with responsive layout and floating animations */}
-          <div className="mt-8 sm:mt-12 flex flex-wrap items-center gap-4 sm:gap-8 text-white/90 animate-fade-in animation-delay-1100">
+          <div className="mt-6 sm:mt-12 flex flex-wrap items-center gap-4 sm:gap-8 text-white/90 animate-fade-in animation-delay-1100">
             <div className="flex items-center gap-2 group hover:animate-float hover:duration-500 transition-all">
               <Shield size={16} className="text-white sm:w-5 sm:h-5" />
               <span className="text-xs sm:text-sm">Secure Payments</span>
@@ -150,7 +150,7 @@ export const HeroSection = ({ onNavigateToSignup, onNavigateToTrack }: HeroSecti
             </div>
           </div>
         </div>
-        
+
         {/* Image container with carousel slider */}
         <div className="relative animate-scale-in animation-delay-400 hover:animate-float hover:duration-2000">
           <div className="absolute -inset-2 sm:-inset-4 bg-primary/20 rounded-2xl sm:rounded-3xl blur-2xl sm:blur-3xl opacity-30 animate-pulse"></div>

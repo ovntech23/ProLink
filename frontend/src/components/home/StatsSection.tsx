@@ -44,18 +44,18 @@ export const StatsSection = () => {
         shadow: 'hover:shadow-warning/20'
       }
     ];
-    
+
     return colors[index % colors.length];
   };
 
   return (
-    <section className="py-20 border-y border-border bg-card/30">
-      <div className="max-w-7xl mx-auto px-6 grid grid-cols-2 md:grid-cols-4 gap-8 text-center">
+    <section className="py-12 sm:py-20 border-y border-border bg-card/30">
+      <div className="max-w-7xl mx-auto px-4 sm:px-6 grid grid-cols-1 xs:grid-cols-2 md:grid-cols-4 gap-4 sm:gap-8 text-center">
         {statistics.map((stat, index) => {
           const colorClasses = getColorClasses(index);
           return (
-            <div 
-              key={stat._id} 
+            <div
+              key={stat._id}
               className={`p-6 bg-linear-to-br ${colorClasses.bg} rounded-xl border ${colorClasses.border} ${colorClasses.hoverBorder} transition-all duration-300 group hover:shadow-lg ${colorClasses.shadow} hover:-translate-y-1`}
             >
               <div className={`text-4xl font-bold ${colorClasses.text} mb-2 group-hover:scale-110 transition-all duration-300`}>
