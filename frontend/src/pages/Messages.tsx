@@ -10,13 +10,32 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger, Dialog
 import { Button } from '../components/ui/button';
 import { Avatar, AvatarFallback, AvatarImage } from '../components/ui/avatar';
 
+import { useLocation } from 'react-router-dom';
+
 export const MessagesPage = () => {
   const { currentUser, users, onlineUsers, getConversations, getMessagesBetweenUsers, markMessageAsRead, sendMessage, messages, isSoundMuted, toggleSoundMute } = useStore();
   const [selectedUser, setSelectedUser] = useState<User | null>(null);
   const [localMessages, setLocalMessages] = useState<any[]>([]);
   const [conversations, setConversations] = useState<any[]>([]);
   const [isNewMessageOpen, setIsNewMessageOpen] = useState(false);
+  const [initialMessage, setInitialMessage] = useState('');
   const isMobile = useIsMobile();
+  const location = useLocation();
+
+  // Handle navigation from other pages (e.g. Job Board Inquiry)
+  useEffect(() => {
+    if (location.state?.recipientId && users.length > 0) {
+      const recipient = users.find(u => u.id === location.state.recipientId);
+      if (recipient) {
+        handleSelectUser(recipient);
+        if (location.state.initialMessage) {
+          setInitialMessage(location.state.initialMessage);
+          // Clear state to prevent reapplying on re-renders
+          window.history.replaceState({}, document.title);
+        }
+      }
+    }
+  }, [location.state, users]);
 
   // Synchronize local messages and conversations with the global store
   useEffect(() => {
@@ -113,7 +132,7 @@ export const MessagesPage = () => {
             ))}
           </div>
           <div className="p-4 border-t border-border">
-            <MessageInput onSend={handleSendMessage} />
+            <MessageInput onSend={handleSendMessage} initialValue={initialMessage} />
           </div>
         </div>
       );
@@ -256,7 +275,7 @@ export const MessagesPage = () => {
                 ))}
               </div>
               <div className="p-4 border-t border-border">
-                <MessageInput onSend={handleSendMessage} />
+                <MessageInput onSend={handleSendMessage} initialValue={initialMessage} />
               </div>
             </>
           ) : (

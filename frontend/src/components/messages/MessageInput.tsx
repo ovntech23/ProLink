@@ -1,4 +1,4 @@
-import { useState, useRef } from 'react';
+import { useState, useRef, useEffect } from 'react';
 import { Button } from '../ui/button';
 import { Input } from '../ui/input';
 import { Send, Paperclip, Smile, X } from 'lucide-react';
@@ -27,14 +27,21 @@ const EMOJI_CATEGORIES = [
 
 interface MessageInputProps {
   onSend: (content: string, attachments?: Attachment[]) => void;
+  initialValue?: string;
 }
 
-export const MessageInput = ({ onSend }: MessageInputProps) => {
-  const [message, setMessage] = useState('');
+export const MessageInput = ({ onSend, initialValue = '' }: MessageInputProps) => {
+  const [message, setMessage] = useState(initialValue);
   const [attachments, setAttachments] = useState<Attachment[]>([]);
   const { replyTo, setReplyTo } = useStore();
   const fileInputRef = useRef<HTMLInputElement>(null);
   const inputRef = useRef<HTMLInputElement>(null);
+
+  useEffect(() => {
+    if (initialValue) {
+      setMessage(initialValue);
+    }
+  }, [initialValue]);
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
