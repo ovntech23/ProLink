@@ -2,7 +2,6 @@ import { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { Footer } from '../components/layout/Footer';
 import { Search, Package, CheckCircle, Circle, MapPin, AlertTriangle, ArrowLeft, Truck } from 'lucide-react';
-import { useStore } from '../store/useStore';
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
@@ -13,30 +12,41 @@ import prolinkLogo from '../assets/prolink logo.png';
 
 export const PublicTracking = () => {
     const navigate = useNavigate();
-    const { shipments } = useStore();
     const [searchId, setSearchId] = useState('');
     const [foundShipment, setFoundShipment] = useState<any>(null);
     const [error, setError] = useState('');
+    const [loading, setLoading] = useState(false);
 
-    const handleSearch = (e: React.FormEvent) => {
+    const handleSearch = async (e: React.FormEvent) => {
         e.preventDefault();
         setError('');
+        setFoundShipment(null);
 
         if (!searchId.trim()) {
             setError('Please enter a tracking ID');
             return;
         }
 
-        const shipment = shipments.find(s =>
-            s.trackingId.toLowerCase() === searchId.toLowerCase().trim() ||
-            s.id.toLowerCase() === searchId.toLowerCase().trim()
-        );
+        setLoading(true);
+        try {
+            // Determine API URL based on environment or hardcoded for now since useStore handles base URL usually
+            // Assuming standard vite proxy or relative path if served from same origin
+            // But we need the direct URL. Let's use relative path /api which Vite proxies to backend.
+            // If running separately, needs full URL. Usually imported from config.
+            const API_URL = import.meta.env.VITE_API_URL || 'http://localhost:5000/api';
 
-        if (shipment) {
-            setFoundShipment(shipment);
-        } else {
-            setFoundShipment(null);
-            setError('No shipment found with that tracking ID. Please check and try again.');
+            const response = await fetch(`${API_URL}/shipments/track/${searchId.trim()}`);
+            const data = await response.json();
+
+            if (response.ok) {
+                setFoundShipment(data);
+            } else {
+                setError(data.message || 'No shipment found with that tracking ID.');
+            }
+        } catch (err) {
+            setError('Failed to connect to tracking service. Please try again.');
+        } finally {
+            setLoading(false);
         }
     };
 
@@ -109,9 +119,10 @@ export const PublicTracking = () => {
                             </div>
                             <Button
                                 type="submit"
-                                className="h-14 px-8 bg-[#ba0b0b] hover:bg-[#940909] text-white font-bold rounded-xl shadow-lg shadow-[#ba0b0b]/20 transition-all active:scale-95"
+                                disabled={loading}
+                                className="h-14 px-8 bg-[#ba0b0b] hover:bg-[#940909] text-white font-bold rounded-xl shadow-lg shadow-[#ba0b0b]/20 transition-all active:scale-95 disabled:opacity-70"
                             >
-                                Track Now
+                                {loading ? 'Searching...' : 'Track Now'}
                             </Button>
                         </form>
                     </CardContent>

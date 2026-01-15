@@ -99,9 +99,35 @@ const updateShipment = async (req, res) => {
     }
 };
 
+// @desc    Get shipment by Tracking ID (Public)
+// @route   GET /api/shipments/track/:trackingId
+// @access  Public
+const getShipmentByTracking = async (req, res) => {
+    try {
+        console.log(`GET /api/shipments/track/${req.params.trackingId} - Public tracking request`);
+        const { trackingId } = req.params;
+
+        // Case-insensitive search
+        const shipment = await Shipment.findOne({
+            trackingId: { $regex: new RegExp(`^${trackingId}$`, 'i') }
+        }).select('-ownerId -driverId -pickupContactPerson -pickupContactPhone -deliveryContactPerson -deliveryContactPhone'); // Exclude sensitive info for public view
+
+        if (shipment) {
+            res.json(shipment);
+        } else {
+            console.log(`Shipment with tracking ID ${trackingId} not found`);
+            res.status(404).json({ message: 'Shipment not found' });
+        }
+    } catch (error) {
+        console.error(`Error tracking shipment ${req.params.trackingId}:`, error);
+        res.status(500).json({ message: 'Server error' });
+    }
+};
+
 module.exports = {
     getShipments,
     getShipmentById,
     createShipment,
-    updateShipment
+    updateShipment,
+    getShipmentByTracking
 };

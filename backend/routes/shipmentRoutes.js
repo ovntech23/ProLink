@@ -1,7 +1,10 @@
 const express = require('express');
 const router = express.Router();
-const { getShipments, getShipmentById, createShipment, updateShipment } = require('../controllers/shipmentController');
+const { getShipments, getShipmentById, createShipment, updateShipment, getShipmentByTracking } = require('../controllers/shipmentController');
 const { protect } = require('../middleware/auth');
+
+// Public tracking route (must be before /:id to avoid conflict if IDs look like "track")
+router.get('/track/:trackingId', getShipmentByTracking);
 
 // Get all shipments
 router.get('/', protect, getShipments);
