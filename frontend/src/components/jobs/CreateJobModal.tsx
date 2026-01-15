@@ -31,7 +31,7 @@ export const CreateJobModal = ({ isOpen, onClose }: CreateJobModalProps) => {
         try {
             await createJob({
                 ...formData,
-                budget: Number(formData.budget),
+                budget: formData.budget ? Number(formData.budget) : 0, // 0 indicates negotiable/no budget
                 pickupDate: new Date(formData.pickupDate).toISOString()
             });
             toast.success('Job posted successfully!');
@@ -96,14 +96,13 @@ export const CreateJobModal = ({ isOpen, onClose }: CreateJobModalProps) => {
 
                     <div className="grid grid-cols-2 gap-4">
                         <div className="space-y-2">
-                            <Label htmlFor="budget">Budget (USD)</Label>
+                            <Label htmlFor="budget">Budget (ZMW) - Optional</Label>
                             <Input
                                 id="budget"
                                 type="number"
-                                placeholder="500"
+                                placeholder="e.g. 5000"
                                 value={formData.budget}
                                 onChange={(e) => setFormData({ ...formData, budget: e.target.value })}
-                                required
                             />
                         </div>
                         <div className="space-y-2">

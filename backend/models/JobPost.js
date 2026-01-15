@@ -19,8 +19,7 @@ const jobPostSchema = new mongoose.Schema({
         required: [true, 'Please add a destination location']
     },
     budget: {
-        type: Number,
-        required: [true, 'Please add a budget']
+        type: Number
     },
     pickupDate: {
         type: Date,

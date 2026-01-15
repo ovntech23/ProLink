@@ -2,7 +2,7 @@ import { useState, useEffect } from 'react';
 import { useStore } from '../store/useStore';
 import type { JobPost } from '../store/useStore';
 import { Button } from '../components/ui/button';
-import { Plus, MapPin, Calendar, DollarSign, MessageCircle, MoreVertical, CheckCircle2 } from 'lucide-react';
+import { Plus, MapPin, Calendar, MessageCircle, MoreVertical, CheckCircle2 } from 'lucide-react';
 import { CreateJobModal } from '../components/jobs/CreateJobModal';
 import { Badge } from '../components/ui/badge';
 import { Avatar, AvatarFallback, AvatarImage } from '../components/ui/avatar';
@@ -121,8 +121,14 @@ export default function DiscoveryBoard() {
 
                 <div className="flex items-center justify-between mt-auto pt-2">
                     <div className="flex items-center gap-1 text-[#ba0b0b] font-bold">
-                        <DollarSign size={18} />
-                        <span className="text-xl tracking-tighter">{job.budget.toLocaleString()}</span>
+                        {job.budget > 0 ? (
+                            <>
+                                <span className="text-sm font-extrabold">ZMW</span>
+                                <span className="text-xl tracking-tighter">{job.budget.toLocaleString()}</span>
+                            </>
+                        ) : (
+                            <span className="text-lg tracking-tight">Negotiable</span>
+                        )}
                     </div>
 
                     <div className="flex items-center gap-2">
