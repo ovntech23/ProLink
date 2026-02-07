@@ -28,6 +28,17 @@ exports.createCargo = async (req, res) => {
   try {
     const cargo = new Cargo(req.body);
     await cargo.save();
+
+    // Emit WebSocket event for real-time updates (Standalone DB support)
+    const io = req.app.get('io');
+    if (io) {
+      io.emit('data-updated', {
+        type: 'cargo',
+        action: 'create',
+        data: cargo
+      });
+    }
+
     res.status(201).json(cargo);
   } catch (error) {
     if (error.name === 'ValidationError') {

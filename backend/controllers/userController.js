@@ -35,6 +35,24 @@ const registerUser = async (req, res) => {
         role: user.role,
         message: 'User registered successfully'
       });
+
+      // Emit WebSocket event for real-time updates (Standalone DB support)
+      const io = req.app.get('io');
+      if (io) {
+        io.emit('userCreated', {
+          id: user._id,
+          name: user.name,
+          email: user.email,
+          role: user.role,
+          createdAt: user.createdAt
+        });
+
+        io.emit('data-updated', {
+          type: 'user',
+          action: 'create',
+          data: { id: user._id, name: user.name, role: user.role }
+        });
+      }
     } else {
       res.status(400).json({ message: 'Invalid user data' });
     }
@@ -146,6 +164,24 @@ const createUser = async (req, res) => {
         role: user.role,
         message: 'User created successfully'
       });
+
+      // Emit WebSocket event for real-time updates (Standalone DB support)
+      const io = req.app.get('io');
+      if (io) {
+        io.emit('userCreated', {
+          id: user._id,
+          name: user.name,
+          email: user.email,
+          role: user.role,
+          createdAt: user.createdAt
+        });
+
+        io.emit('data-updated', {
+          type: 'user',
+          action: 'create',
+          data: { id: user._id, name: user.name, role: user.role }
+        });
+      }
     } else {
       res.status(400).json({ message: 'Invalid user data' });
     }

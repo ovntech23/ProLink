@@ -414,7 +414,8 @@ const connectDB = async () => {
 // Initialize database connection
 connectDB().then(() => {
   // Set up MongoDB change streams after successful connection
-  setupChangeStreams();
+  // DISABLED: Change streams require a Replica Set. Using manual emissions in controllers instead.
+  // setupChangeStreams();
 });
 
 // Set up MongoDB change streams for real-time updates

@@ -55,6 +55,23 @@ const createShipment = async (req, res) => {
         console.log('POST /api/shipments - Creating new shipment:', req.body.trackingId);
         const shipment = await Shipment.create(req.body);
         console.log('Shipment created successfully:', shipment._id);
+
+        // Emit WebSocket event for real-time updates (Standalone DB support)
+        const io = req.app.get('io');
+        if (io) {
+            io.emit('shipmentCreated', {
+                id: shipment._id,
+                ...shipment._doc // Emit full document (careful with sensitive fields if any)
+            });
+
+            // Also emit generic update event
+            io.emit('data-updated', {
+                type: 'shipment',
+                action: 'create',
+                data: { id: shipment._id, ...shipment._doc }
+            });
+        }
+
         res.status(201).json(shipment);
     } catch (error) {
         console.error('Error creating shipment:', error);
