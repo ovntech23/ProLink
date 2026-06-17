@@ -1,4 +1,4 @@
-const mongoose = require('mongoose');
+const mongoose = require('./config/db-compat');
 const bcrypt = require('bcryptjs');
 const dotenv = require('dotenv');
 const User = require('./models/User');
@@ -8,12 +8,9 @@ dotenv.config();
 
 const createAdminUser = async () => {
   try {
-    // Connect to MongoDB
-    await mongoose.connect(process.env.MONGODB_URI, {
-      useNewUrlParser: true,
-      useUnifiedTopology: true,
-    });
-    console.log('✅ Connected to MongoDB');
+    // Connect to database
+    await mongoose.connect(process.env.MONGODB_URI);
+    console.log('✅ Connected to Database');
 
     // Check if admin already exists
     const existingAdmin = await User.findOne({ role: 'admin' });
