@@ -382,7 +382,15 @@ export const useStore = create<AppState>((set, get) => ({
         id: response.data._id || response.data.id
       };
 
-      set(state => ({ shipments: [newShipment, ...state.shipments] }));
+      set(state => {
+        const shipmentExists = state.shipments.some(s => s.id === newShipment.id);
+        if (shipmentExists) {
+          return {
+            shipments: state.shipments.map(s => s.id === newShipment.id ? { ...s, ...newShipment } : s)
+          };
+        }
+        return { shipments: [newShipment, ...state.shipments] };
+      });
       return newShipment;
     } catch (error) {
       console.error('Failed to create shipment:', error);
@@ -603,10 +611,21 @@ export const useStore = create<AppState>((set, get) => ({
         phone: userData.phone
       } as User;
 
-      set(state => ({
-        users: [newUser, ...state.users],
-        drivers: newUser.role === 'driver' ? [newUser as DriverProfile, ...state.drivers] : state.drivers
-      }));
+      set(state => {
+        const userExists = state.users.some(u => u.id === newUser.id);
+        if (userExists) {
+          return {
+            users: state.users.map(u => u.id === newUser.id ? { ...u, ...newUser } : u),
+            drivers: newUser.role === 'driver'
+              ? state.drivers.map(d => d.id === newUser.id ? { ...d, ...(newUser as DriverProfile) } : d)
+              : state.drivers
+          };
+        }
+        return {
+          users: [newUser, ...state.users],
+          drivers: newUser.role === 'driver' ? [newUser as DriverProfile, ...state.drivers] : state.drivers
+        };
+      });
     } catch (error) {
       console.error('Failed to create user:', error);
       throw error;
@@ -643,6 +662,15 @@ export const useStore = create<AppState>((set, get) => ({
         isApproved: false
       } as User;
       set(state => {
+        const userExists = state.users.some(u => u.id === newUser.id);
+        if (userExists) {
+          return {
+            users: state.users.map(u => u.id === newUser.id ? { ...u, ...newUser } : u),
+            drivers: newUser.role === 'driver'
+              ? state.drivers.map(d => d.id === newUser.id ? { ...d, ...(newUser as DriverProfile) } : d)
+              : state.drivers
+          };
+        }
         const users = [...state.users, newUser];
         const drivers = userData.role === 'driver'
           ? [...state.drivers, newUser as DriverProfile]
@@ -960,19 +988,21 @@ export const useStore = create<AppState>((set, get) => ({
 
       if (type === 'shipment') {
         set(state => {
+          const shipmentId = data.id || data._id;
+          const mappedShipment = { ...data, id: shipmentId };
           if (action === 'create') {
             // Deduplicate: remove if already exists (e.g. from optimistic update)
-            const cleanedShipments = state.shipments.filter(s => s.id !== data.id && s.id !== data._id);
-            return { shipments: [data, ...cleanedShipments] };
+            const cleanedShipments = state.shipments.filter(s => s.id !== shipmentId);
+            return { shipments: [mappedShipment, ...cleanedShipments] };
           } else if (action === 'update') {
             return {
               shipments: state.shipments.map(s =>
-                (s.id === data.id || (s as any)._id === data.id) ? { ...s, ...data } : s
+                s.id === shipmentId ? { ...s, ...mappedShipment } : s
               )
             };
           } else if (action === 'delete') {
             return {
-              shipments: state.shipments.filter(s => s.id !== data.id)
+              shipments: state.shipments.filter(s => s.id !== shipmentId)
             };
           }
           return {};
@@ -981,13 +1011,14 @@ export const useStore = create<AppState>((set, get) => ({
         set(state => {
           // Handle user updates (affecting both users and drivers lists)
           const userId = data.id || data._id;
+          const mappedUser = { ...data, id: userId };
           let newUsers = state.users.filter(u => u.id !== userId);
           let newDrivers = state.drivers.filter(d => d.id !== userId);
 
           if (action === 'create' || action === 'update') {
-            newUsers = [data, ...newUsers];
-            if (data.role === 'driver') {
-              newDrivers = [data as DriverProfile, ...newDrivers];
+            newUsers = [mappedUser, ...newUsers];
+            if (mappedUser.role === 'driver') {
+              newDrivers = [mappedUser as DriverProfile, ...newDrivers];
             }
           } else if (action === 'delete') {
             // Already filtered out above
