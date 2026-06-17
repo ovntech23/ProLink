@@ -714,9 +714,12 @@ class QueryWrapper {
             const exclude = fields.map(f => f.substring(1));
             attributes = { exclude };
           } else {
-            const include = fields.map(f => f.startsWith('+') ? f.substring(1) : f);
-            if (!include.includes('_id')) include.push('_id');
-            attributes = include;
+            const onlyPlus = fields.every(f => f.startsWith('+'));
+            if (!onlyPlus) {
+              const include = fields.map(f => f.startsWith('+') ? f.substring(1) : f);
+              if (!include.includes('_id')) include.push('_id');
+              attributes = include;
+            }
           }
         }
       }
