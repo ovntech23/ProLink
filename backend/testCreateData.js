@@ -1,4 +1,4 @@
-const mongoose = require('mongoose');
+const mongoose = require('./config/db-compat');
 const Statistic = require('./models/Statistic');
 const Cargo = require('./models/Cargo');
 const Feature = require('./models/Feature');
@@ -7,14 +7,11 @@ const dotenv = require('dotenv');
 // Load environment variables
 dotenv.config();
 
-// Connect to MongoDB
+// Connect to Database
 const connectDB = async () => {
   try {
-    const conn = await mongoose.connect(process.env.MONGODB_URI, {
-      useNewUrlParser: true,
-      useUnifiedTopology: true,
-    });
-    console.log(`MongoDB Connected: ${conn.connection.host}`);
+    const conn = await mongoose.connect(process.env.MONGODB_URI);
+    console.log(`Database Connected: ${conn.connection.host}`);
     return conn;
   } catch (error) {
     console.error('Database connection error:', error);

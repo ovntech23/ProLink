@@ -1,52 +1,38 @@
-const mongoose = require('mongoose');
+const mongoose = require('./config/db-compat');
+const User = require('./models/User');
 const dotenv = require('dotenv');
 
 // Load environment variables
 dotenv.config();
 
-// User model (simplified for migration)
-const userSchema = new mongoose.Schema({
-  name: String,
-  email: String,
-  role: String,
-  status: String,
-  phone: String,
-  isApproved: Boolean,
-  createdAt: Date
-});
-
-const User = mongoose.model('User', userSchema);
-
 async function cleanupUserStatus() {
   try {
     console.log('🔄 Starting user status cleanup...');
 
-    // Connect to MongoDB
+    // Connect to database
     await mongoose.connect(process.env.MONGODB_URI);
-    console.log('✅ Connected to MongoDB');
+    console.log('✅ Connected to Database');
 
-    // Find all users with status field
-    const usersWithStatus = await User.find({ status: { $exists: true } });
-    console.log(`📊 Found ${usersWithStatus.length} users with status field`);
+    // Find all users
+    const users = await User.find({});
+    console.log(`📊 Found ${users.length} users`);
 
     let updatedCount = 0;
 
-    for (const user of usersWithStatus) {
-      // Remove status field for non-driver users
+    for (const user of users) {
+      // Set status to null for non-driver users
       if (user.role !== 'driver') {
-        await User.updateOne(
-          { _id: user._id },
-          { $unset: { status: 1 } }
-        );
-        updatedCount++;
-        console.log(`🧹 Removed status from ${user.email} (${user.role})`);
+        if (user.status !== null) {
+          user.status = null;
+          await user.save();
+          updatedCount++;
+          console.log(`🧹 Removed status from ${user.email} (${user.role})`);
+        }
       } else {
         // For drivers, ensure they have a valid status
         if (!['available', 'busy', 'offline'].includes(user.status)) {
-          await User.updateOne(
-            { _id: user._id },
-            { status: 'available' }
-          );
+          user.status = 'available';
+          await user.save();
           updatedCount++;
           console.log(`🔧 Fixed invalid status for driver ${user.email}`);
         }
@@ -56,28 +42,24 @@ async function cleanupUserStatus() {
     console.log(`✅ Cleanup complete! Updated ${updatedCount} users`);
 
     // Show final status distribution
-    const driverStats = await User.aggregate([
-      { $match: { role: 'driver' } },
-      { $group: { _id: '$status', count: { $sum: 1 } } }
-    ]);
+    const { sequelize } = mongoose;
+    const driverStats = await sequelize.models.User.findAll({
+      attributes: ['status', [sequelize.fn('COUNT', sequelize.col('_id')), 'count']],
+      where: { role: 'driver' },
+      group: ['status'],
+      raw: true
+    });
 
     console.log('📈 Driver status distribution:');
     driverStats.forEach(stat => {
-      console.log(`  ${stat._id}: ${stat.count}`);
+      console.log(`  ${stat.status}: ${stat.count}`);
     });
-
-    const nonDriverWithStatus = await User.countDocuments({
-      role: { $ne: 'driver' },
-      status: { $exists: true }
-    });
-
-    console.log(`📊 Non-drivers with status field: ${nonDriverWithStatus}`);
 
   } catch (error) {
     console.error('❌ Cleanup failed:', error);
   } finally {
     await mongoose.disconnect();
-    console.log('🔌 Disconnected from MongoDB');
+    console.log('🔌 Disconnected from Database');
   }
 }
 

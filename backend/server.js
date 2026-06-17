@@ -1,7 +1,7 @@
 const express = require('express');
 const cors = require('cors');
 const dotenv = require('dotenv');
-const mongoose = require('mongoose');
+const mongoose = require('./config/db-compat');
 const morgan = require('morgan');
 const rateLimit = require('express-rate-limit');
 const helmet = require('helmet');
@@ -383,30 +383,27 @@ app.use((err, req, res, next) => {
   res.status(500).json({ message: 'Something went wrong!' });
 });
 
-// Connect to MongoDB
+// Connect to Database
 const connectDB = async () => {
   try {
-    console.log('Attempting to connect to MongoDB...');
-    console.log('MongoDB URI:', process.env.MONGODB_URI);
+    console.log('Attempting to connect to Database...');
+    console.log('Database Connection URI:', process.env.MONGODB_URI ? process.env.MONGODB_URI.split('@')[1] || 'configured' : 'not defined');
 
-    const conn = await mongoose.connect(process.env.MONGODB_URI, {
-      useNewUrlParser: true,
-      useUnifiedTopology: true,
-    });
-    console.log(`✅ MongoDB Connected: ${conn.connection.host}`);
-    console.log(`✅ Database: ${conn.connection.name}`);
+    const conn = await mongoose.connect(process.env.MONGODB_URI);
+    console.log(`✅ Database Connected: ${conn.connection.host}`);
+    console.log(`✅ Database Name: ${conn.connection.name}`);
   } catch (error) {
     console.error('❌ Database connection error:', error.message);
-    console.error('❌ MongoDB URI used:', process.env.MONGODB_URI);
+    console.error('❌ Connection URI used:', process.env.MONGODB_URI ? process.env.MONGODB_URI.split('@')[1] || 'configured' : 'not defined');
 
     if (process.env.NODE_ENV === 'production') {
       console.error('❌ Server cannot start without database connection in production. Exiting...');
       process.exit(1);
     } else {
       console.warn('⚠️  Warning: Running without database connection in development mode.');
-      console.warn('⚠️  Please start MongoDB or update MONGODB_URI in your .env file.');
-      console.warn('💡 Tip: You can use Docker to run MongoDB locally:');
-      console.warn('   docker-compose up -d mongodb');
+      console.warn('⚠️  Please start Database or update MONGODB_URI in your .env file.');
+      console.warn('💡 Tip: You can use Docker to run PostgreSQL locally:');
+      console.warn('   docker-compose up -d postgres');
     }
   }
 };

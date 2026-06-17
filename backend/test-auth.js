@@ -1,4 +1,4 @@
-const mongoose = require('mongoose');
+const mongoose = require('./config/db-compat');
 const bcrypt = require('bcryptjs');
 const User = require('./models/User');
 const { generateToken } = require('./middleware/auth');
@@ -8,11 +8,8 @@ require('dotenv').config();
 async function testAuth() {
   try {
     // Connect to database
-    await mongoose.connect(process.env.MONGODB_URI, {
-      useNewUrlParser: true,
-      useUnifiedTopology: true,
-    });
-    console.log('✅ Connected to MongoDB');
+    await mongoose.connect(process.env.MONGODB_URI);
+    console.log('✅ Connected to Database');
 
     // Create test user
     const testUser = new User({

@@ -1,5 +1,5 @@
 
-const mongoose = require('mongoose');
+const mongoose = require('../config/db-compat');
 const dotenv = require('dotenv');
 const path = require('path');
 const { getUsers } = require('../controllers/userController');
