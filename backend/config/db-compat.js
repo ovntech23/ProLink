@@ -586,80 +586,85 @@ function wrapDocument(sequelizeInstance, modelName) {
   return doc;
 }
 
-// Mongoose Model Compatibility Wrapper
-class MongooseModelCompat {
-  constructor(sequelizeModel, modelName) {
-    this.sequelizeModel = sequelizeModel;
-    this.modelName = modelName;
+// Model constructor wrapper
+function createModelWrapper(sequelizeModel, modelName) {
+  function Model(data = {}) {
+    const instance = sequelizeModel.build(data);
+    return wrapDocument(instance, modelName);
   }
 
-  find(filter = {}) {
+  Model.sequelizeModel = sequelizeModel;
+  Model.modelName = modelName;
+
+  Model.find = function(filter = {}) {
     return new QueryWrapper(this, 'find', filter);
-  }
+  };
 
-  findOne(filter = {}) {
+  Model.findOne = function(filter = {}) {
     return new QueryWrapper(this, 'findOne', filter);
-  }
+  };
 
-  findById(id) {
+  Model.findById = function(id) {
     return new QueryWrapper(this, 'findById', id);
-  }
+  };
 
-  findByIdAndUpdate(id, update, options = {}) {
+  Model.findByIdAndUpdate = function(id, update, options = {}) {
     return new QueryWrapper(this, 'findByIdAndUpdate', { id, update, options });
-  }
+  };
 
-  findByIdAndDelete(id) {
+  Model.findByIdAndDelete = function(id) {
     return new QueryWrapper(this, 'findByIdAndDelete', id);
-  }
+  };
 
-  findOneAndDelete(filter) {
+  Model.findOneAndDelete = function(filter) {
     return new QueryWrapper(this, 'findOneAndDelete', filter);
-  }
+  };
 
-  findOneAndUpdate(filter, update, options = {}) {
+  Model.findOneAndUpdate = function(filter, update, options = {}) {
     return new QueryWrapper(this, 'findOneAndUpdate', { filter, update, options });
-  }
+  };
 
-  async countDocuments(filter = {}) {
+  Model.countDocuments = async function(filter = {}) {
     const where = mongoToSequelizeQuery(filter);
-    return await this.sequelizeModel.count({ where });
-  }
+    return await sequelizeModel.count({ where });
+  };
 
-  async deleteMany(filter = {}) {
+  Model.deleteMany = async function(filter = {}) {
     const where = mongoToSequelizeQuery(filter);
-    return await this.sequelizeModel.destroy({ where });
-  }
+    return await sequelizeModel.destroy({ where });
+  };
 
-  async deleteOne(filter = {}) {
+  Model.deleteOne = async function(filter = {}) {
     const where = mongoToSequelizeQuery(filter);
-    const record = await this.sequelizeModel.findOne({ where });
+    const record = await sequelizeModel.findOne({ where });
     if (record) {
       await record.destroy();
       return { deletedCount: 1 };
     }
     return { deletedCount: 0 };
-  }
+  };
 
-  async updateMany(filter = {}, update = {}, options = {}) {
+  Model.updateMany = async function(filter = {}, update = {}, options = {}) {
     const where = mongoToSequelizeQuery(filter);
     const values = update.$set ? update.$set : update;
-    const [affectedCount] = await this.sequelizeModel.update(values, { where });
+    const [affectedCount] = await sequelizeModel.update(values, { where });
     return { matchedCount: affectedCount, modifiedCount: affectedCount };
-  }
+  };
 
-  async create(data) {
+  Model.create = async function(data) {
     if (Array.isArray(data)) {
       return this.insertMany(data);
     }
-    const record = await this.sequelizeModel.create(data);
-    return wrapDocument(record, this.modelName);
-  }
+    const record = await sequelizeModel.create(data);
+    return wrapDocument(record, modelName);
+  };
 
-  async insertMany(arr) {
-    const records = await this.sequelizeModel.bulkCreate(arr);
-    return records.map(r => wrapDocument(r, this.modelName));
-  }
+  Model.insertMany = async function(arr) {
+    const records = await sequelizeModel.bulkCreate(arr);
+    return records.map(r => wrapDocument(r, modelName));
+  };
+
+  return Model;
 }
 
 // Query Wrapper for chaining methods
@@ -874,15 +879,15 @@ const mongooseMock = {
   }
 };
 
-const UserCompat = new MongooseModelCompat(User, 'User');
-const CargoCompat = new MongooseModelCompat(Cargo, 'Cargo');
-const FeatureCompat = new MongooseModelCompat(Feature, 'Feature');
-const StatisticCompat = new MongooseModelCompat(Statistic, 'Statistic');
-const ShipmentCompat = new MongooseModelCompat(Shipment, 'Shipment');
-const ConversationCompat = new MongooseModelCompat(Conversation, 'Conversation');
-const MessageCompat = new MongooseModelCompat(Message, 'Message');
-const PaymentCompat = new MongooseModelCompat(Payment, 'Payment');
-const JobPostCompat = new MongooseModelCompat(JobPost, 'JobPost');
+const UserCompat = createModelWrapper(User, 'User');
+const CargoCompat = createModelWrapper(Cargo, 'Cargo');
+const FeatureCompat = createModelWrapper(Feature, 'Feature');
+const StatisticCompat = createModelWrapper(Statistic, 'Statistic');
+const ShipmentCompat = createModelWrapper(Shipment, 'Shipment');
+const ConversationCompat = createModelWrapper(Conversation, 'Conversation');
+const MessageCompat = createModelWrapper(Message, 'Message');
+const PaymentCompat = createModelWrapper(Payment, 'Payment');
+const JobPostCompat = createModelWrapper(JobPost, 'JobPost');
 
 module.exports = {
   ...mongooseMock,
