@@ -838,7 +838,7 @@ class QueryWrapper {
   }
 
   then(resolve, reject) {
-    this.exec().then(resolve, reject);
+    return this.exec().then(resolve, reject);
   }
 }
 
