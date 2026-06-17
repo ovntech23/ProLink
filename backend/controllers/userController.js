@@ -50,7 +50,16 @@ const registerUser = async (req, res) => {
         io.emit('data-updated', {
           type: 'user',
           action: 'create',
-          data: { id: user._id, name: user.name, role: user.role }
+          data: {
+            id: user._id,
+            _id: user._id,
+            name: user.name,
+            email: user.email,
+            role: user.role,
+            phone: user.phone,
+            isApproved: user.isApproved,
+            createdAt: user.createdAt
+          }
         });
       }
     } else {
@@ -179,7 +188,16 @@ const createUser = async (req, res) => {
         io.emit('data-updated', {
           type: 'user',
           action: 'create',
-          data: { id: user._id, name: user.name, role: user.role }
+          data: {
+            id: user._id,
+            _id: user._id,
+            name: user.name,
+            email: user.email,
+            role: user.role,
+            phone: user.phone,
+            isApproved: user.isApproved,
+            createdAt: user.createdAt
+          }
         });
       }
     } else {
