@@ -71,10 +71,13 @@ const User = sequelize.define('User', {
   timestamps: true,
   hooks: {
     beforeSave: async (user) => {
-      if (user.changed('password')) {
-        const bcrypt = require('bcryptjs');
-        const salt = await bcrypt.genSalt(10);
-        user.password = await bcrypt.hash(user.password, salt);
+      if (user.isNewRecord || user.changed('password')) {
+        const pw = user.password;
+        if (pw && !pw.startsWith('$2a$') && !pw.startsWith('$2b$')) {
+          const bcrypt = require('bcryptjs');
+          const salt = await bcrypt.genSalt(10);
+          user.password = await bcrypt.hash(pw, salt);
+        }
       }
     }
   }
