@@ -33,7 +33,7 @@ const jobRoutes = require('./routes/jobRoutes');
 
 // Initialize app
 const app = express();
-app.set('trust proxy', true);
+app.set('trust proxy', 1);
 
 // Create HTTP server
 const server = http.createServer(app);
