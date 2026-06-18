@@ -939,6 +939,7 @@ export const useStore = create<AppState>((set, get) => ({
     socket.off('userUpdate');
     socket.off('data-updated');
     socket.off('new-message');
+    socket.off('messageSent');
     socket.off('messageRead');
 
     // Listen for shipment updates
@@ -946,16 +947,6 @@ export const useStore = create<AppState>((set, get) => ({
       set(state => ({
         shipments: state.shipments.map(s =>
           s.id === shipmentData.id ? { ...s, ...shipmentData } : s
-        )
-      }));
-    });
-
-    // Listen for message read events
-    socket.on('messageRead', (data: { messageId: string; conversationId: string; readAt: string }) => {
-      console.log('Received messageRead:', data);
-      set(state => ({
-        messages: state.messages.map(m =>
-          m.id === data.messageId ? { ...m, read: true } : m
         )
       }));
     });
@@ -1046,9 +1037,8 @@ export const useStore = create<AppState>((set, get) => ({
       }
     });
 
-    // Listen for new-message event
-    socket.on('new-message', (message: any) => {
-      console.log('Received new-message:', message);
+    const handleIncomingOrSentMessage = (message: any, isSentConfirmation = false) => {
+      console.log(`Received ${isSentConfirmation ? 'messageSent' : 'new-message'}:`, message);
 
       // Ensure we map backend fields if necessary
       const mappedMessage: Message = {
@@ -1093,31 +1083,38 @@ export const useStore = create<AppState>((set, get) => ({
         return { messages };
       });
 
-      // Show toast notification for new incoming messages
-      const sender = get().users.find(u => u.id === mappedMessage.senderId);
-      const senderName = sender?.name || 'Someone';
+      // Show toast notification and play sound ONLY for incoming messages (new-message), NOT for own sent confirmation
+      if (!isSentConfirmation) {
+        // Show toast notification for new incoming messages
+        const sender = get().users.find(u => u.id === mappedMessage.senderId);
+        const senderName = sender?.name || 'Someone';
 
-      toast(`New message from ${senderName}`, {
-        description: mappedMessage.content.length > 50
-          ? mappedMessage.content.substring(0, 50) + '...'
-          : mappedMessage.content,
-        action: {
-          label: 'View',
-          onClick: () => {
-            // We can't easily navigate from here without a router context, 
-            // but sonner toasts are usually self-contained. 
-            // The user can click the sidebar link.
+        toast(`New message from ${senderName}`, {
+          description: mappedMessage.content.length > 50
+            ? mappedMessage.content.substring(0, 50) + '...'
+            : mappedMessage.content,
+          action: {
+            label: 'View',
+            onClick: () => {
+              // We can't easily navigate from here without a router context, 
+              // but sonner toasts are usually self-contained. 
+              // The user can click the sidebar link.
+            }
           }
-        }
-      });
+        });
 
-      // Play notification sound if not muted
-      const { isSoundMuted } = get();
-      if (!isSoundMuted) {
-        const audio = new Audio('https://assets.mixkit.co/active_storage/sfx/2869/2869-preview.mp3'); // Short cheerful beep
-        audio.play().catch(err => console.error('Error playing sound:', err));
+        // Play notification sound if not muted
+        const { isSoundMuted } = get();
+        if (!isSoundMuted) {
+          const audio = new Audio('https://assets.mixkit.co/active_storage/sfx/2869/2869-preview.mp3'); // Short cheerful beep
+          audio.play().catch(err => console.error('Error playing sound:', err));
+        }
       }
-    });
+    };
+
+    // Listen for incoming and outgoing private messages
+    socket.on('new-message', (message: any) => handleIncomingOrSentMessage(message, false));
+    socket.on('messageSent', (message: any) => handleIncomingOrSentMessage(message, true));
 
     // Listen for message reaction events
     socket.on('messageReaction', (data: { messageId: string; reactions: any[] }) => {

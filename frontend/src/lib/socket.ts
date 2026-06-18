@@ -2,7 +2,23 @@ import { io, Socket } from 'socket.io-client';
 import type { Message } from '../store/useStore';
 
 // Define the server URL
-const SERVER_URL = import.meta.env.VITE_API_BASE_URL || 'http://localhost:5000';
+const getSocketUrl = () => {
+  const envUrl = import.meta.env.VITE_API_BASE_URL;
+  if (envUrl && envUrl.trim() !== '') {
+    return envUrl;
+  }
+  // In production, if VITE_API_BASE_URL is not set, connect to the same host/origin
+  // In development (localhost), connect to the default backend port (5000)
+  if (typeof window !== 'undefined') {
+    const isLocalhost = window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1';
+    if (!isLocalhost) {
+      return window.location.origin;
+    }
+  }
+  return 'http://localhost:5000';
+};
+
+const SERVER_URL = getSocketUrl();
 
 // Extended window interface to hold global socket instance
 declare global {
